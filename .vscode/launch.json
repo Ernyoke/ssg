@@ -12,7 +12,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "./site", "./dst"
+                "/home/ervin/Projects/other/static/site", "/home/ervin/Projects/other/static/dst"
             ],
         }
     ]

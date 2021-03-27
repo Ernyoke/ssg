@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 
 import markdown
 
@@ -23,7 +23,7 @@ def traverse_directory(source_directory: str, destination_directory: str, frame:
             directory_to_create = create_destination_directory(current_directory, destination_directory)
         for file_name in file_list:
             print('\t%s' % file_name)
-            if file_name != 'index.html':
+            if file_name not in ignore:
                 if file_name.endswith('.md'):
                     page = render_markdown_page(os.path.join(source_directory, file_name), frame)
                     name = [*os.path.splitext(file_name)]
@@ -34,11 +34,11 @@ def traverse_directory(source_directory: str, destination_directory: str, frame:
 
 
 def create_destination_directory(current_directory, destination_directory):
-    directory_to_create = destination_directory
     parts = [*os.path.split(current_directory)]
     parts[0] = destination_directory
     directory_to_create = os.path.join(*parts)
-    os.mkdir(directory_to_create)
+    if not os.path.exists(directory_to_create):
+        os.mkdir(directory_to_create)
     return directory_to_create
 
 
@@ -48,7 +48,7 @@ def render_markdown_page(path, frame):
         md = markdown.markdown(content, extensions=['fenced_code'])
         page = []
         for line in frame:
-            if line.startswith('{{ content }}'):
+            if '{{ content }}' in line:
                 md_lines = [x + "\n" for x in md.split("\n")]
                 page.extend(md_lines)
             else:
@@ -63,9 +63,9 @@ def write_file(page, path):
 
 
 def copy_file(source_path, destination_path):
-    with open(source_path, 'r') as file:
-        content = file.read()
-        write_file(content, destination_path)
+    with open(source_path, 'rb') as source:
+        with open(destination_path, 'wb') as destination:
+            destination.write(source.read())
 
 
 if __name__ == '__main__':
@@ -73,4 +73,5 @@ if __name__ == '__main__':
     parser.add_argument("source", help="Source folder from which the files has to be parsed.", type=str)
     parser.add_argument("destination", help="Destination folder where the results will be stored.", type=str)
     args = parser.parse_args()
-    traverse_directory(args.source, args.destination, read_frame(args.source), [])
+    frame_name = 'frame.html'
+    traverse_directory(args.source, args.destination, read_frame(args.source, frame_name), [frame_name])

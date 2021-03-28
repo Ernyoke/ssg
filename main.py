@@ -25,7 +25,7 @@ def traverse_directory(source_directory: str, destination_directory: str, frame:
             print('\t%s' % file_name)
             if file_name not in ignore:
                 if file_name.endswith('.md'):
-                    page = render_markdown_page(os.path.join(source_directory, file_name), frame)
+                    page = render_markdown_page(os.path.join(current_directory, file_name), frame)
                     name = [*os.path.splitext(file_name)]
                     name[len(name) - 1] = '.html'
                     write_file(page, os.path.join(directory_to_create, ''.join(name)))
@@ -45,7 +45,7 @@ def create_destination_directory(current_directory, destination_directory):
 def render_markdown_page(path, frame):
     with open(path) as file:
         content = file.read()
-        md = markdown.markdown(content, extensions=['fenced_code'])
+        md = markdown.markdown(content, extensions=['fenced_code', 'tables'])
         page = []
         for line in frame:
             if '{{ content }}' in line:

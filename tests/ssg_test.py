@@ -9,8 +9,8 @@ class MyTestCase(unittest.TestCase):
                          '<a href="asd.html"></a><a href="x.html"></a>')
 
     def test_add_base_path(self):
-        self.assertEqual(ssg.add_base_path(['<head>', '</head>'], 'base.html'),
-                         ['<head>', '<base href="base.html"/>', '</head>'])
+        self.assertEqual(ssg.add_base_path('<head></head>', 'base.html'),
+                         '<head>\n <base href="base.html"/>\n</head>')
 
 
 if __name__ == '__main__':

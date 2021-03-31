@@ -19,26 +19,26 @@ def start():
                        [frame_name, '.git'])
 
 
-def read_frame(path: str, file_name: str = 'frame.html') -> list:
+def read_frame(path: str, file_name: str = 'frame.html') -> str:
     files = os.listdir(path)
     if file_name in files:
         with open(os.path.join(path, file_name)) as file:
-            return file.readlines()
+            return file.read()
     else:
         raise Exception("Frame not found in the root folder!")
 
 
-def add_base_path(page: list, base_path: str):
-    soup = BeautifulSoup('\n'.join(page), 'html.parser')
+def add_base_path(page: str, base_path: str):
+    soup = BeautifulSoup(page, 'html.parser')
     head = soup.find('head')
     base = soup.new_tag('base', href=base_path)
     head.insert(0, base)
-    return [x.strip() for x in soup.prettify().split('\n')]
+    return soup.prettify()
 
 
 def traverse_directory(source_directory: str,
                        destination_directory: str,
-                       frame: list,
+                       frame: str,
                        exclude: list):
     if not os.path.exists(destination_directory):
         os.mkdir(destination_directory)
@@ -75,18 +75,18 @@ def create_destination_directory(current_directory: str, destination_directory: 
     return directory_to_create
 
 
-def render_markdown_page(path: str, frame: list) -> list:
+def render_markdown_page(path: str, frame: str) -> str:
     with open(path) as file:
         content = file.read()
         md = markdown.markdown(content, extensions=['fenced_code', 'tables', 'sane_lists'])
         page = []
-        for line in frame:
+        for line in frame.split('\n'):
             if '{{ content }}' in line:
                 md_lines = [x + "\n" for x in replace_md_with_html(md).split("\n")]
                 page.extend(md_lines)
             else:
                 page.append(line)
-        return page
+        return BeautifulSoup(''.join(page), 'html.parser').prettify()
 
 
 def replace_md_with_html(html_doc: str) -> str:
@@ -98,10 +98,9 @@ def replace_md_with_html(html_doc: str) -> str:
     return str(soup)
 
 
-def write_file(page: list, path: str):
+def write_file(page: str, path: str):
     with open(path, 'w') as file:
-        for line in page:
-            file.write(line)
+        file.write(page)
 
 
 def copy_file(source_path: str, destination_path: str):

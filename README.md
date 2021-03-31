@@ -1,5 +1,18 @@
 # ssg
 
+ssg - *Static Site Generator* used for generate my static site.
+
+## Usage
+
+```shell
+usage: ssg.py [-h] source destination base_path
+
+positional arguments:
+  source       Source folder from which the files has to be parsed.
+  destination  Destination folder where the results will be stored.
+  base_path    Base path of the page.
+```
+
 ## Development
 
 1. Clone the project:

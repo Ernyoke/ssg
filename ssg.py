@@ -9,7 +9,7 @@ def start():
     parser = argparse.ArgumentParser()
     parser.add_argument("source", help="Source folder from which the files has to be parsed.", type=str)
     parser.add_argument("destination", help="Destination folder where the results will be stored.", type=str)
-    parser.add_argument("base_path", help="Base path for html", type=str)
+    parser.add_argument("base_path", help="Base path of the page.", type=str)
     args = parser.parse_args()
     frame_name = 'frame.html'
     frame = read_frame(args.source, frame_name)

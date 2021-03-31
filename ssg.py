@@ -2,6 +2,21 @@ import argparse
 import os
 
 import markdown
+from bs4 import BeautifulSoup
+
+
+def start():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source", help="Source folder from which the files has to be parsed.", type=str)
+    parser.add_argument("destination", help="Destination folder where the results will be stored.", type=str)
+    parser.add_argument("base_path", help="Base path for html", type=str)
+    args = parser.parse_args()
+    frame_name = 'frame.html'
+    frame = read_frame(args.source, frame_name)
+    traverse_directory(args.source,
+                       args.destination,
+                       add_base_path(frame, args.base_path),
+                       [frame_name, '.git'])
 
 
 def read_frame(path: str, file_name: str = 'frame.html') -> list:
@@ -14,9 +29,11 @@ def read_frame(path: str, file_name: str = 'frame.html') -> list:
 
 
 def add_base_path(page: list, base_path: str):
-    for index, line in enumerate(page):
-        if 'base href=""' in line:
-            page[index] = line.replace('base href=""', 'base href="%s"' % base_path)
+    soup = BeautifulSoup('\n'.join(page), 'html.parser')
+    head = soup.find('head')
+    base = soup.new_tag('base', href=base_path)
+    head.insert(0, base)
+    return [x.strip() for x in soup.prettify().split('\n')]
 
 
 def traverse_directory(source_directory: str,
@@ -61,15 +78,24 @@ def create_destination_directory(current_directory: str, destination_directory: 
 def render_markdown_page(path: str, frame: list) -> list:
     with open(path) as file:
         content = file.read()
-        md = markdown.markdown(content, extensions=['fenced_code', 'tables'])
+        md = markdown.markdown(content, extensions=['fenced_code', 'tables', 'sane_lists'])
         page = []
         for line in frame:
             if '{{ content }}' in line:
-                md_lines = [x + "\n" for x in md.split("\n")]
+                md_lines = [x + "\n" for x in replace_md_with_html(md).split("\n")]
                 page.extend(md_lines)
             else:
                 page.append(line)
         return page
+
+
+def replace_md_with_html(html_doc: str) -> str:
+    soup = BeautifulSoup(html_doc, 'html.parser')
+    for a in soup.find_all('a'):
+        url = a['href']
+        if url.endswith('.md'):
+            a['href'] = url.replace('.md', '.html')
+    return str(soup)
 
 
 def write_file(page: list, path: str):
@@ -85,15 +111,4 @@ def copy_file(source_path: str, destination_path: str):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("source", help="Source folder from which the files has to be parsed.", type=str)
-    parser.add_argument("destination", help="Destination folder where the results will be stored.", type=str)
-    parser.add_argument("base_path", help="Base path for html", type=str)
-    args = parser.parse_args()
-    frame_name = 'frame.html'
-    frame = read_frame(args.source, frame_name)
-    add_base_path(frame, args.base_path)
-    traverse_directory(args.source,
-                       args.destination,
-                       frame,
-                       [frame_name, '.git'])
+    start()

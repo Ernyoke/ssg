@@ -1,5 +1,6 @@
 import argparse
 import os
+from urllib.parse import urlparse
 
 import markdown
 from bs4 import BeautifulSoup
@@ -16,7 +17,8 @@ def start():
     traverse_directory(args.source,
                        args.destination,
                        add_base_path(frame, args.base_path),
-                       [frame_name, '.git'])
+                       [frame_name, '.git', 'ignore'],
+                       args.base_path)
 
 
 def read_frame(path: str, file_name: str = 'frame.html') -> str:
@@ -39,7 +41,8 @@ def add_base_path(page: str, base_path: str):
 def traverse_directory(source_directory: str,
                        destination_directory: str,
                        frame: str,
-                       exclude: list):
+                       exclude: list,
+                       base_href: str):
     if not os.path.exists(destination_directory):
         os.mkdir(destination_directory)
 
@@ -58,7 +61,7 @@ def traverse_directory(source_directory: str,
             print('\t%s' % file_name)
             if file_name not in exclude:
                 if file_name.endswith('.md'):
-                    page = render_markdown_page(os.path.join(current_directory, file_name), frame)
+                    page = render_markdown_page(os.path.join(current_directory, file_name), frame, base_href)
                     name = [*os.path.splitext(file_name)]
                     name[len(name) - 1] = '.html'
                     write_file(page, os.path.join(directory_to_create, ''.join(name)))
@@ -75,14 +78,15 @@ def create_destination_directory(current_directory: str, destination_directory: 
     return directory_to_create
 
 
-def render_markdown_page(path: str, frame: str) -> str:
+def render_markdown_page(path: str, frame: str, base_href: str) -> str:
     with open(path) as file:
         content = file.read()
         md = markdown.markdown(content, extensions=['fenced_code', 'tables', 'sane_lists'])
         page = []
         for line in frame.split('\n'):
             if '{{ content }}' in line:
-                md_lines = [x + "\n" for x in replace_md_with_html(md).split("\n")]
+                md_lines = [x + "\n" for x in
+                            add_target_blank_to_external_urls(replace_md_with_html(md), base_href).split("\n")]
                 page.extend(md_lines)
             else:
                 page.append(line)
@@ -95,6 +99,16 @@ def replace_md_with_html(html_doc: str) -> str:
         url = a['href']
         if url.endswith('.md'):
             a['href'] = url.replace('.md', '.html')
+    return str(soup)
+
+
+def add_target_blank_to_external_urls(html_doc: str, base_href: str) -> str:
+    soup = BeautifulSoup(html_doc, 'html.parser')
+    for a in soup.find_all('a'):
+        url = a['href']
+        # Check if url is absolute and do not start with base path
+        if bool(urlparse(url).netloc) and not url.startswith(base_href):
+            a['target'] = '_blank'
     return str(soup)
 
 

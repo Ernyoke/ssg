@@ -17,7 +17,7 @@ def start():
     traverse_directory(args.source,
                        args.destination,
                        add_base_path(frame, args.base_path),
-                       [frame_name, '.git', 'ignore'],
+                       [frame_name, '.git', 'ignore', 'README.md'],
                        args.base_path)
 
 

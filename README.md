@@ -2,10 +2,18 @@
 
 ssg - *Static Site Generator* used to generate my static site: [https://ernyoke.github.io](https://ernyoke.github.io/index.html)
 
+## Install
+
+```bash
+git clone git@github.com:Ernyoke/ssg.git
+cd ssg
+pip3 install .
+```
+
 ## Usage
 
-```shell
-usage: ssg.py [-h] source destination base_path
+```bash
+usage: python -m ssg [-h] source destination base_path
 
 positional arguments:
   source       Source folder from which the files has to be parsed.
@@ -25,20 +33,20 @@ git@github.com:Ernyoke/ervin-szilagyi-static-site.git
    
 3. Create a virtual environment:
 
-```shell
+```bash
 python -m venv .
 ```
 
 4. Activate the virtual environment:
 
-```shell
+```bash
 .\Scripts\activate.ps1
 ```
 
 4. Install dependencies:
 
-```shell
+```bash
 pip install -r requirements.txt
 ```
 
-5. Run `main.py`
+5. Run `ssg`

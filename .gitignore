@@ -6,3 +6,6 @@ lib64
 share/
 pyvenv.cfg
 Scripts/
+dist/
+ssg.egg-info
+ssg/__pycache__/

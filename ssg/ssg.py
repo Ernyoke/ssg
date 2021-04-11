@@ -1,4 +1,3 @@
-import argparse
 import os
 from urllib.parse import urlparse, urljoin
 
@@ -6,19 +5,14 @@ import markdown
 from bs4 import BeautifulSoup
 
 
-def start():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("source", help="Source folder from which the files has to be parsed.", type=str)
-    parser.add_argument("destination", help="Destination folder where the results will be stored.", type=str)
-    parser.add_argument("base_path", help="Base path of the page.", type=str)
-    args = parser.parse_args()
+def generate(source: str, destination: str, base_path: str):
     frame_name = 'frame.html'
-    frame = read_frame(args.source, frame_name)
-    traverse_directory(args.source,
-                       args.destination,
-                       add_base_path(frame, args.base_path),
+    frame = read_frame(source, frame_name)
+    traverse_directory(source,
+                       destination,
+                       add_base_path(frame, base_path),
                        [frame_name, '.git', 'ignore', 'README.md'],
-                       args.base_path)
+                       base_path)
 
 
 def read_frame(path: str, file_name: str = 'frame.html') -> str:
@@ -141,7 +135,3 @@ def copy_file(source_path: str, destination_path: str):
     with open(source_path, 'rb') as source:
         with open(destination_path, 'wb') as destination:
             destination.write(source.read())
-
-
-if __name__ == '__main__':
-    start()

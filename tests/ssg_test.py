@@ -1,6 +1,6 @@
 import unittest
 
-import ssg
+from ssg import *
 
 
 class MyTestCase(unittest.TestCase):

@@ -23,9 +23,11 @@ positional arguments:
 
 ## Development
 
+### Windows
+
 1. Clone the project:
    
-```shell
+```bash
 git@github.com:Ernyoke/ervin-szilagyi-static-site.git
 ```
 
@@ -49,4 +51,34 @@ python -m venv .
 pip install -r requirements.txt
 ```
 
+5. Run `ssg`
+
+## Unix
+
+1. Clone the project:
+   
+```bash
+git@github.com:Ernyoke/ervin-szilagyi-static-site.git
+```
+
+2. `cd` into the `ssg` folder
+   
+3. Create a virtual environment:
+
+```bash
+virtualenv -p python3 .
+```
+
+4. Activate the virtual environment:
+
+```bash
+chmod +x ./bin/activate
+source ./bin/activate
+```
+
+4. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
 5. Run `ssg`

@@ -1,6 +1,7 @@
 import os
 from urllib.parse import urlparse, urljoin
 
+import bs4
 import markdown
 from bs4 import BeautifulSoup
 
@@ -10,7 +11,7 @@ def generate(source: str, destination: str, base_path: str):
     frame = read_frame(source, frame_name)
     traverse_directory(source,
                        destination,
-                       add_base_path(frame, base_path),
+                       set_base_path(frame, base_path),
                        [frame_name, '.git', 'ignore', 'README.md'],
                        base_path)
 
@@ -24,33 +25,33 @@ def read_frame(path: str, file_name: str = 'frame.html') -> str:
         raise Exception("Frame not found in the root folder!")
 
 
+def set_base_path(page: str, base_path: str):
+    soup = BeautifulSoup(page, 'html.parser')
+    set_base_path_for_elements(soup.find_all('a'),
+                               attribute='href',
+                               base_path=base_path)
+    set_base_path_for_elements(soup.find_all('link'),
+                               attribute='href',
+                               base_path=base_path)
+    set_base_path_for_elements(soup.find_all('script'),
+                               attribute='src',
+                               base_path=base_path)
+    set_base_path_for_elements(soup.find_all('img'),
+                               attribute='src',
+                               base_path=base_path)
+    return str(soup)
+
+
+def set_base_path_for_elements(elements: bs4.element.ResultSet, attribute: str, base_path: str):
+    for element in elements:
+        if element.has_attr(attribute):
+            url = element[attribute]
+            if not is_absolute(url):
+                element[attribute] = urljoin(base_path, url)
+
+
 def is_absolute(url):
     return bool(urlparse(url).netloc)
-
-
-def add_base_path(page: str, base_path: str):
-    soup = BeautifulSoup(page, 'html.parser')
-    for a in soup.find_all('a'):
-        if a.has_attr('href'):
-            url = a['href']
-            if not is_absolute(url):
-                a['href'] = urljoin(base_path, url)
-    for link in soup.find_all('link'):
-        if link.has_attr('href'):
-            url = link['href']
-            if not is_absolute(url):
-                link['href'] = urljoin(base_path, url)
-    for script in soup.find_all('script'):
-        if script.has_attr('src'):
-            url = script['src']
-            if not is_absolute(url):
-                script['src'] = urljoin(base_path, url)
-    for img in soup.find_all('img'):
-        if img.has_attr('src'):
-            url = img['src']
-            if not is_absolute(url):
-                img['src'] = urljoin(base_path, url)
-    return str(soup)
 
 
 def traverse_directory(source_directory: str,

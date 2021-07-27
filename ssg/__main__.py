@@ -1,6 +1,6 @@
 import argparse
 
-from .ssg import generate
+from ssg import generate
 
 
 def main():

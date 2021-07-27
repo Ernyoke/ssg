@@ -121,7 +121,7 @@ def add_target_blank_to_external_urls(html_doc: str, base_href: str) -> str:
     soup = BeautifulSoup(html_doc, 'html.parser')
     for a in soup.find_all('a'):
         url = a['href']
-        # Check if url is absolute and do not start with base path
+        # Check if url is absolute and does not start with a base path
         if bool(urlparse(url).netloc) and not url.startswith(base_href):
             a['target'] = '_blank'
     return str(soup)

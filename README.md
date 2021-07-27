@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 5. Run `ssg`
 
-## Unix
+### Unix
 
 1. Clone the project:
    

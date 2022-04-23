@@ -26,27 +26,22 @@ def read_frame(path: Path, file_name: str = 'frame.html') -> str:
 
 def set_base_path(page: str, base_path: str) -> str:
     soup = BeautifulSoup(page, 'html.parser')
-    set_base_path_for_elements(soup.find_all('a'),
-                               attribute='href',
-                               base_path=base_path)
-    set_base_path_for_elements(soup.find_all('link'),
-                               attribute='href',
-                               base_path=base_path)
-    set_base_path_for_elements(soup.find_all('script'),
-                               attribute='src',
-                               base_path=base_path)
-    set_base_path_for_elements(soup.find_all('img'),
-                               attribute='src',
-                               base_path=base_path)
+    element_to_attribute = {
+        'a': 'href',
+        'link': 'href',
+        'script': 'src',
+        'img': 'src'
+    }
+    for element, attribute in element_to_attribute.items():
+        set_base_path_for_elements(soup.find_all(element), attribute, base_path)
     return str(soup)
 
 
 def set_base_path_for_elements(elements: bs4.element.ResultSet, attribute: str, base_path: str) -> None:
-    for element in elements:
-        if element.has_attr(attribute):
-            url = element[attribute]
-            if not is_absolute(url):
-                element[attribute] = urljoin(base_path, url)
+    for element in filter(lambda elem: elem.has_attr(attribute), elements):
+        url = element[attribute]
+        if not is_absolute(url):
+            element[attribute] = urljoin(base_path, url)
 
 
 def is_absolute(url) -> bool:

@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='ssg',
-      version='0.0.1',
+      version='0.0.2',
       long_description=readme(),
       long_description_content_type='text/markdown',
       classifiers=[],
@@ -19,4 +19,7 @@ setup(name='ssg',
       packages=['ssg'],
       install_requires=['markdown', 'beautifulsoup4'],
       include_pacage_data=True,
+      entry_points={
+            'console_scripts': ['ssg=ssg.command_line:main'],
+      },
       zip_safe=False)

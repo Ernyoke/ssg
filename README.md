@@ -4,8 +4,16 @@ ssg - *Static Site Generator* used to generate my static site: [https://ernyoke.
 
 ## Install
 
+### Unix 
+
 ```bash
-pip3 install git+ssh://git@github.com:Ernyoke/ssg.git
+pip3 install git+ssh://git@github.com/Ernyoke/ssg.git
+```
+
+### Windows
+
+```bash
+pip install git+ssh://git@github.com/Ernyoke/ssg.git
 ```
 
 ## Usage

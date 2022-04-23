@@ -1,12 +1,13 @@
 import os
 from urllib.parse import urlparse, urljoin
 
-import bs4
 import markdown
+import bs4
 from bs4 import BeautifulSoup
+from pathlib import Path
 
 
-def generate(source: str, destination: str, base_path: str) -> None:
+def generate(source: Path, destination: Path, base_path: str) -> None:
     frame_name = 'frame.html'
     traverse_directory(source_directory=source,
                        destination_directory=destination,
@@ -15,9 +16,9 @@ def generate(source: str, destination: str, base_path: str) -> None:
                        base_href=base_path)
 
 
-def read_frame(path: str, file_name: str = 'frame.html') -> str:
+def read_frame(path: Path, file_name: str = 'frame.html') -> str:
     if file_name in os.listdir(path):
-        with open(os.path.join(path, file_name)) as file:
+        with open(path / Path(file_name)) as file:
             return file.read()
     else:
         raise Exception('Frame not found in the root folder!')
@@ -52,52 +53,47 @@ def is_absolute(url) -> bool:
     return bool(urlparse(url).netloc)
 
 
-def traverse_directory(source_directory: str,
-                       destination_directory: str,
+def traverse_directory(source_directory: Path,
+                       destination_directory: Path,
                        frame: str,
                        exclude: list,
                        base_href: str) -> None:
-    if not os.path.exists(destination_directory):
-        os.mkdir(destination_directory)
+    if not destination_directory.exists():
+        destination_directory.mkdir()
 
     for current_directory, sub_directories, file_list in os.walk(source_directory):
 
         # Exclude directories from the excluded list
         sub_directories[:] = [sub_dir for sub_dir in sub_directories if sub_dir not in exclude]
+        current_directory = Path(current_directory)
 
         # Create the destination directories
         directory_to_create = destination_directory
         if current_directory != source_directory:
-            rel_path = os.path.relpath(current_directory, source_directory)
-            directory_to_create = create_destination_directory(rel_path, destination_directory)
+            directory_to_create = destination_directory / current_directory.relative_to(source_directory)
+            if not directory_to_create.exists():
+                directory_to_create.mkdir()
 
         for file_name in file_list:
-            print(f'\t{file_name}')
             if file_name not in exclude:
                 if file_name.endswith('.md'):
-                    page = render_markdown_page(os.path.join(current_directory, file_name), frame, base_href)
-                    name = [*os.path.splitext(file_name)]
-                    name[-1] = '.html'
-                    write_file(page, os.path.join(directory_to_create, ''.join(name)))
+                    page = render_markdown_page(current_directory / file_name, frame, base_href)
+                    html_file = f'{Path(file_name).stem}.html'
+                    write_file(page, directory_to_create / html_file)
+                    print(f'Rendered {directory_to_create / html_file}')
                 else:
-                    copy_file(os.path.join(current_directory, file_name), os.path.join(directory_to_create, file_name))
+                    copy_file(current_directory / file_name, directory_to_create / file_name)
+                    print(f'Copied {directory_to_create / file_name}')
 
 
-def create_destination_directory(rel_path: str, destination_directory: str) -> str:
-    directory_to_create = os.path.join(*[destination_directory, rel_path])
-    if not os.path.exists(directory_to_create):
-        os.mkdir(directory_to_create)
-    return directory_to_create
-
-
-def render_markdown_page(path: str, frame: str, base_href: str) -> str:
+def render_markdown_page(path: Path, frame: str, base_href: str) -> str:
     with open(path) as file:
         content = file.read()
         md = markdown.markdown(content, extensions=['fenced_code', 'tables', 'sane_lists'])
         page = []
         for line in frame.split('\n'):
             if '{{ content }}' in line:
-                md_lines = [f'{x}\n' for x in
+                md_lines = [f'{md_line}\n' for md_line in
                             add_target_blank_to_external_urls(replace_md_with_html(md),
                                                               base_href).split('\n')]
                 page.extend(md_lines)
@@ -125,12 +121,12 @@ def add_target_blank_to_external_urls(html_doc: str, base_href: str) -> str:
     return str(soup)
 
 
-def write_file(page: str, path: str) -> None:
+def write_file(page: str, path: Path) -> None:
     with open(path, 'w') as file:
         file.write(page)
 
 
-def copy_file(source_path: str, destination_path: str) -> None:
+def copy_file(source_path: Path, destination_path: Path) -> None:
     with open(source_path, 'rb') as source:
         with open(destination_path, 'wb') as destination:
             destination.write(source.read())

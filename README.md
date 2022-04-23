@@ -5,15 +5,13 @@ ssg - *Static Site Generator* used to generate my static site: [https://ernyoke.
 ## Install
 
 ```bash
-git clone git@github.com:Ernyoke/ssg.git
-cd ssg
-pip3 install .
+pip3 install git+ssh://git@github.com:Ernyoke/ssg.git
 ```
 
 ## Usage
 
 ```bash
-usage: python -m ssg [-h] source destination base_path
+usage: ssg [-h] source destination base_path
 
 positional arguments:
   source       Source folder from which the files has to be parsed.
@@ -28,7 +26,7 @@ positional arguments:
 1. Clone the project:
    
 ```bash
-git@github.com:Ernyoke/ervin-szilagyi-static-site.git
+git clone git@github.com:Ernyoke/ervin-szilagyi-static-site.git
 ```
 
 2. `cd` into the `ssg` folder
@@ -58,7 +56,7 @@ pip install -r requirements.txt
 1. Clone the project:
    
 ```bash
-git@github.com:Ernyoke/ervin-szilagyi-static-site.git
+git clone git@github.com:Ernyoke/ervin-szilagyi-static-site.git
 ```
 
 2. `cd` into the `ssg` folder
@@ -79,6 +77,6 @@ source ./bin/activate
 4. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 5. Run `ssg`

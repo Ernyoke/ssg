@@ -69,23 +69,21 @@ def traverse_directory(source_directory: Path,
             if not directory_to_create.exists():
                 directory_to_create.mkdir()
 
-        for file_name in file_list:
-            if file_name not in exclude:
-                if file_name.endswith('.md'):
-                    page = render_markdown_page(current_directory / file_name, frame, base_href)
-                    html_file = f'{Path(file_name).stem}.html'
-                    write_file(page, directory_to_create / html_file)
-                    print(f'Rendered {directory_to_create / html_file}')
-                else:
-                    copy_file(current_directory / file_name, directory_to_create / file_name)
-                    print(f'Copied {directory_to_create / file_name}')
+        for file_name in filter(lambda name: name not in exclude, file_list):
+            if file_name.endswith('.md'):
+                page = render_markdown_page(current_directory / file_name, frame, base_href)
+                html_file = f'{Path(file_name).stem}.html'
+                write_file(page, directory_to_create / html_file)
+                print(f'Rendered {directory_to_create / html_file}')
+            else:
+                copy_file(current_directory / file_name, directory_to_create / file_name)
+                print(f'Copied {directory_to_create / file_name}')
 
 
 def render_markdown_page(path: Path, frame: str, base_href: str) -> str:
     with open(path) as file:
-        content = file.read()
-        md = markdown.markdown(content, extensions=['fenced_code', 'tables', 'sane_lists'])
         page = []
+        md = markdown.markdown(file.read(), extensions=['fenced_code', 'tables', 'sane_lists'])
         for line in frame.split('\n'):
             if '{{ content }}' in line:
                 md_lines = [f'{md_line}\n' for md_line in

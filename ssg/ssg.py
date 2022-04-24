@@ -8,6 +8,10 @@ from pathlib import Path
 
 
 def generate(source: Path, destination: Path, base_path: str) -> None:
+    """
+    Entry point. Generate a new static site project by traversing the source directory and transforming Markdown files
+    into HTML.
+    """
     frame_name = 'frame.html'
     traverse_directory(source_directory=source,
                        destination_directory=destination,
@@ -53,13 +57,14 @@ def traverse_directory(source_directory: Path,
                        frame: str,
                        exclude: list,
                        base_href: str) -> None:
+    """
+    Traverse source directory. Transform markdown (.md) files into HTML files. Render this files into the source
+    directory. Copy other non-excluded files into source_directory.
+    """
     if not destination_directory.exists():
         destination_directory.mkdir()
 
     for current_directory, sub_directories, file_list in os.walk(source_directory):
-
-        # Exclude directories from the excluded list
-        sub_directories[:] = [sub_dir for sub_dir in sub_directories if sub_dir not in exclude]
         current_directory = Path(current_directory)
 
         # Create the destination directories
@@ -81,6 +86,9 @@ def traverse_directory(source_directory: Path,
 
 
 def render_markdown_page(path: Path, frame: str, base_href: str) -> str:
+    """
+    Open markdown file and render it as HTML file. Prepend a header to this HTML file and append a footer to it (frame).
+    """
     with open(path) as file:
         page = []
         md = markdown.markdown(file.read(), extensions=['fenced_code', 'tables', 'sane_lists'])
@@ -96,6 +104,9 @@ def render_markdown_page(path: Path, frame: str, base_href: str) -> str:
 
 
 def replace_md_with_html(html_doc: str) -> str:
+    """
+    Replace href attributes which end with .md (Markdown) with attributes which end with .html.
+    """
     soup = BeautifulSoup(html_doc, 'html.parser')
     for a in soup.find_all('a'):
         url = a['href']

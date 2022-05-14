@@ -68,6 +68,10 @@ def traverse_directory(source_directory: Path,
     for current_directory, sub_directories, file_list in os.walk(source_directory):
         current_directory = Path(current_directory)
 
+        # Filter excluded directories
+        if current_directory.name in exclude:
+            print(f'Excluded directory: {current_directory}')
+
         # Create the destination directories
         directory_to_create = destination_directory
         if current_directory != source_directory:

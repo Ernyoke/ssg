@@ -1,10 +1,11 @@
 import os
 from urllib.parse import urlparse, urljoin
+from pathlib import Path
 
 import markdown
 import bs4
 from bs4 import BeautifulSoup
-from pathlib import Path
+from slugify import slugify
 
 
 def generate(source: Path, destination: Path, base_path: str) -> None:
@@ -90,17 +91,18 @@ def render_markdown_page(path: Path, frame: str, base_href: str) -> str:
     Open markdown file and render it as HTML file. Prepend a header to this HTML file and append a footer to it (frame).
     """
     with open(path) as file:
-        page = []
+        lines = []
         md = markdown.markdown(file.read(), extensions=['fenced_code', 'tables', 'sane_lists'])
         for line in frame.split('\n'):
             if '{{ content }}' in line:
                 md_lines = [f'{md_line}\n' for md_line in
                             add_target_blank_to_external_urls(replace_md_with_html(md),
                                                               base_href).split('\n')]
-                page.extend(md_lines)
+                lines.extend(md_lines)
             else:
-                page.append(line)
-        return BeautifulSoup(''.join(page), 'html.parser').prettify()
+                lines.append(line)
+        page = add_anchor_links(''.join(lines))
+        return BeautifulSoup(page, 'html.parser').prettify()
 
 
 def replace_md_with_html(html_doc: str) -> str:
@@ -122,6 +124,20 @@ def add_target_blank_to_external_urls(html_doc: str, base_href: str) -> str:
         # Check if url is absolute and does not start with a base path
         if bool(urlparse(url).netloc) and not url.startswith(base_href):
             a['target'] = '_blank'
+    return str(soup)
+
+
+def add_anchor_links(html_doc: str) -> str:
+    """
+    Add anchor links to headings
+    """
+    soup = BeautifulSoup(html_doc, 'html.parser')
+    for title in soup.find_all('h2'):
+        anchor_tag = soup.new_tag('a', attrs={'class': 'anchor-link',
+                                              'href': f'#{slugify(title.text)}',
+                                              'id': f'{slugify(title.text)}'})
+        anchor_tag.string = '<<'
+        title.append(anchor_tag)
     return str(soup)
 
 

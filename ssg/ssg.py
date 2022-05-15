@@ -71,6 +71,7 @@ def traverse_directory(source_directory: Path,
         # Filter excluded directories
         if current_directory.name in exclude:
             print(f'Excluded directory: {current_directory}')
+            continue
 
         # Create the destination directories
         directory_to_create = destination_directory

@@ -22,9 +22,22 @@ pip install git+ssh://git@github.com/Ernyoke/ssg.git
 usage: ssg [-h] source destination base_path
 
 positional arguments:
-  source       Source folder from which the files has to be parsed.
-  destination  Destination folder where the results will be stored.
-  base_path    Base path of the page.
+```
+
+`config.json` content:
+
+```json
+{
+  "source": "<path to source folder>",
+  "destination": "<path to destination folder>",
+  "baseHref": "https://ervinszilagyi.dev",
+  "meta": {
+    "og:title": "Ervin Szilágyi - Personal site",
+    "og:image": "images/glider-banner.jpg",
+    "og:description": "Personal web page and blog.",
+    "og:url": "https://ervinszilagyi.dev"
+  }
+}
 ```
 
 ## Development

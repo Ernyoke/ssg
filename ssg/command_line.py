@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", help="Path of the config.json file", type=Path)
     args = parser.parse_args()
-    generate(args.input)
+    generate(args.config)
 
 
 if __name__ == '__main__':

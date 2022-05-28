@@ -1,17 +1,14 @@
 import argparse
 from pathlib import Path
 
-from ssg import generate
+from ssg.runner import generate
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("source", help="Source folder from which the files has to be parsed.", type=Path)
-    parser.add_argument("destination", help="Destination folder where the results will be stored.", type=Path)
-    parser.add_argument("base_path", help="Base path of the page.", type=str)
+    parser.add_argument("config", help="Path of the config.json file", type=Path)
     args = parser.parse_args()
-    generate(args.source, args.destination, args.base_path)
-    generate(args.source, args.destination, args.base_path)
+    generate(args.input)
 
 
 if __name__ == '__main__':

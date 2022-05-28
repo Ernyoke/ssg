@@ -10,3 +10,5 @@ dist/
 ssg.egg-info
 ssg/__pycache__/
 __pycache__/
+
+config.local.json

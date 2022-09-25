@@ -188,7 +188,7 @@ def insert_og_meta(html_doc: str, config: Config, title: Optional[str] = None):
 
 
 def write_file(page: str, path: Path) -> None:
-    with open(path, 'w') as file:
+    with open(path, mode='w', newline='\n') as file:
         file.write(page)
 
 

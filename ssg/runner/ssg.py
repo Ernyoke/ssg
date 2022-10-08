@@ -1,5 +1,6 @@
 import json
 import os
+import pprint
 from typing import Optional
 from urllib.parse import urlparse, urljoin
 from pathlib import Path
@@ -18,8 +19,8 @@ def generate(config_path: Path) -> None:
     into HTML.
     """
     config = read_config(config_path)
-    frame = read_frame(config.source, config.frame_name)
-    traverse_directory(config, set_base_path(frame, config.base_href))
+    frames = {frame.folder: frame.folder / Path(frame.frame) for frame in config.frames}
+    traverse_directory(config, config.source / config.default_frame, frames)
 
 
 def read_config(path: Path) -> Config:
@@ -31,9 +32,9 @@ def read_config(path: Path) -> Config:
         return Config.from_json(config)
 
 
-def read_frame(path: Path, file_name: str = 'frame.html') -> str:
-    if file_name in os.listdir(path):
-        with open(path / Path(file_name)) as file:
+def read_frame(path: Path) -> str:
+    if path.exists():
+        with open(path) as file:
             return file.read()
     else:
         raise Exception('Frame not found in the root folder!')
@@ -64,13 +65,22 @@ def is_absolute(url) -> bool:
 
 
 def traverse_directory(config: Config,
-                       frame: str) -> None:
+                       default_frame_path: Path,
+                       frames: dict) -> None:
     """
     Traverse source directory. Transform markdown (.md) files into HTML files. Render this files into the source
     directory. Copy other non-excluded files into source_directory.
     """
+    default_frame = set_base_path(read_frame(default_frame_path), config.base_href)
+    frames_to_exclude = [frame[0] / frame[1] for frame in frames.items()] + [default_frame_path]
+    print(f'Frames to exclude: {pprint.pformat(frames_to_exclude)}')
+
     for current_directory, sub_directories, file_list in os.walk(config.source):
         current_directory = Path(current_directory)
+
+        frame = default_frame if current_directory not in frames else set_base_path(
+            read_frame(frames[current_directory]),
+            config.base_href)
 
         # Filter excluded directories
         if current_directory.name in config.exclude:
@@ -85,7 +95,8 @@ def traverse_directory(config: Config,
         if not directory_to_create.exists():
             directory_to_create.mkdir()
 
-        for file_name in filter(lambda name: name not in config.exclude, file_list):
+        for file_name in filter(lambda name: name not in config.exclude, file_list) and filter(
+                lambda name: current_directory / Path(name) not in frames_to_exclude, file_list):
             if file_name.endswith('.md'):
                 page = render_markdown_page(current_directory / file_name, frame, config)
                 html_file = f'{Path(file_name).stem}.html'

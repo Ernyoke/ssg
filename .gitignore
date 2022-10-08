@@ -12,3 +12,4 @@ ssg/__pycache__/
 __pycache__/
 
 config.local.json
+config.remote.json

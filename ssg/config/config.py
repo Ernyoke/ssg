@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 
 @dataclass
@@ -13,6 +13,12 @@ class Meta:
 
 
 @dataclass
+class Frame:
+    folder: Path
+    frame: str
+
+
+@dataclass
 class Config:
     """
     Data class for holding data from config.json file.
@@ -20,9 +26,10 @@ class Config:
     source: Path
     destination: Path
     base_href: str
-    frame_name: str
+    default_frame: str
     exclude: [str]
     meta: Optional[Meta]
+    frames: List[Frame]
 
     @staticmethod
     def from_json(json: dict):
@@ -43,9 +50,12 @@ class Config:
                         description=meta_dict.get('og:description', ''),
                         url=meta_dict.get('og:url', ''))
 
+        frames = [Frame(Path(json['source']) / Path(frame['folder']), frame['frame']) for frame in json['frames']]
+
         return Config(source=Path(json['source']),
                       destination=Path(json['destination']),
                       base_href=json['baseHref'],
-                      frame_name=json.get('frameName', default_frame_name),
-                      exclude=json.get('exclude', [default_frame_name, '.git', 'ignore', 'README.md']),
-                      meta=meta)
+                      default_frame=json.get('frameName', default_frame_name),
+                      exclude=json.get('exclude', ['.git', 'ignore', 'README.md']),
+                      meta=meta,
+                      frames=frames)

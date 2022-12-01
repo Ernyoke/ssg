@@ -72,7 +72,7 @@ def traverse_directory(config: Config,
     directory. Copy other non-excluded files into source_directory.
     """
     default_frame = set_base_path(read_frame(default_frame_path), config.base_href)
-    frames_to_exclude = [frame[0] / frame[1] for frame in frames.items()] + [default_frame_path]
+    frames_to_exclude = [frame for frame in frames.values()] + [default_frame_path]
     print(f'Frames to exclude: {pprint.pformat(frames_to_exclude)}')
 
     for current_directory, sub_directories, file_list in os.walk(config.source):

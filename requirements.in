@@ -1,0 +1,4 @@
+beautifulsoup4==4.11.2
+Markdown==3.3.4
+setuptools==65.6.3
+unicode_slugify==0.1.5

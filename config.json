@@ -8,11 +8,18 @@
     "og:description": "Personal web page and blog.",
     "og:url": "https://ervinszilagyi.dev"
   },
-  "default_frame": "frame.html",
   "frames": [
     {
-      "folder": "./articles",
-      "frame": "article_frame.html"
+      "file": "index.md",
+      "frame": "articles/index_frame.html"
+    },
+    {
+      "file": "articles/*.md",
+      "frame": "articles/article_frame.html"
+    },
+    {
+      "file": "*.md",
+      "frame": "index_frame.html"
     }
   ]
 }

@@ -14,8 +14,8 @@ class Meta:
 
 @dataclass
 class Frame:
-    folder: Path
-    frame: str
+    file: str
+    frame: Path
 
 
 @dataclass
@@ -26,7 +26,6 @@ class Config:
     source: Path
     destination: Path
     base_href: str
-    default_frame: str
     exclude: [str]
     meta: Optional[Meta]
     frames: List[Frame]
@@ -40,8 +39,6 @@ class Config:
         if not all(map(lambda field: field in json, required_fields)):
             raise Exception("Required field is missing from config.json!")
 
-        default_frame_name = 'frame.html'
-
         meta = None
         if 'meta' in json:
             meta_dict = json['meta']
@@ -50,12 +47,11 @@ class Config:
                         description=meta_dict.get('og:description', ''),
                         url=meta_dict.get('og:url', ''))
 
-        frames = [Frame(Path(json['source']) / Path(frame['folder']), frame['frame']) for frame in json['frames']]
+        frames = [Frame(frame['file'], Path(frame['frame'])) for frame in json['frames']]
 
         return Config(source=Path(json['source']),
                       destination=Path(json['destination']),
                       base_href=json['baseHref'],
-                      default_frame=json.get('frameName', default_frame_name),
                       exclude=json.get('exclude', ['.git', 'ignore', 'README.md']),
                       meta=meta,
                       frames=frames)

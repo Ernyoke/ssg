@@ -36,11 +36,34 @@ positional arguments:
     "og:image": "images/glider-banner.jpg",
     "og:description": "Personal web page and blog.",
     "og:url": "https://ervinszilagyi.dev"
-  }
+  },
+    "frames": [
+    {
+      "file": "src/index.md",
+      "frame": "src/articles/index_frame.html"
+    },
+    {
+      "file": "src/articles/*.md",
+      "frame": "src/articles/article_frame.html"
+    },
+    {
+      "file": "src/*.md",
+      "frame": "src/index_frame.html"
+    }
+  ]
 }
 ```
 
 ## Development
+
+### Generate `requirements.txt`
+
+```bash
+pip3 install pipreqs
+pip3 install pip-tools
+
+pipreqs --savepath=requirements.in && pip-compile
+```
 
 ### Windows
 

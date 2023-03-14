@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List
@@ -31,9 +33,11 @@ class Config:
     frames: List[Frame]
 
     @staticmethod
-    def from_json(json: dict):
+    def from_json(json: dict) -> Config:
         """
         Build a Config object from a dictionary containing the input from config.json.
+        :param json: config.json content as a dictionary
+        :return: Config object
         """
         required_fields = ['source', 'destination', 'baseHref']
         if not all(map(lambda field: field in json, required_fields)):

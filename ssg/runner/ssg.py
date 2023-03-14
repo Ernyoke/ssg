@@ -20,6 +20,8 @@ def generate(config_path: Path) -> None:
     """
     Entry point. Generate a new static site project by traversing the source directory and transforming Markdown files
     into HTML.
+    :param config_path: path to the JSON config file
+    :return: None
     """
     config = read_config(config_path)
     traverse_directory(config)
@@ -28,6 +30,8 @@ def generate(config_path: Path) -> None:
 def read_config(path: Path) -> Config:
     """
     Read the configuration JSON file and transform it into a Config object.
+    :param path: path of the config file
+    :return: a Config object with all the properties from the config file.
     """
     with open(path, 'r') as file:
         config = json.load(file)
@@ -35,6 +39,11 @@ def read_config(path: Path) -> Config:
 
 
 def read_frame(path: Path) -> str:
+    """
+    Read a frame file and return its content as a string.
+    :param path: path of the frame file
+    :return: content of the frame file as string
+    """
     if path.exists():
         with open(path) as file:
             return file.read()
@@ -43,6 +52,12 @@ def read_frame(path: Path) -> str:
 
 
 def set_base_path(page: str, base_path: str) -> str:
+    """
+    Set base path for each link (href).
+    :param page: the HTML content as a string
+    :param base_path: base_path to be prepended to each link
+    :return: updated HTML content as string
+    """
     soup = BeautifulSoup(page, 'html.parser')
     element_to_attribute = {
         'a': 'href',
@@ -56,13 +71,27 @@ def set_base_path(page: str, base_path: str) -> str:
 
 
 def set_base_path_for_elements(elements: bs4.element.ResultSet, attribute: str, base_path: str) -> None:
+    """
+    Set the base path for the content of the attribute (href, src)
+    :param elements: HTML element, can be <a>, <link>, <script>, <img>
+    :param attribute: Attribute of the HTML element (href, src)
+    :param base_path: base path string
+    :return: None
+    """
     for element in filter(lambda elem: elem.has_attr(attribute), elements):
         url = element[attribute]
         if not is_absolute(url):
             element[attribute] = urljoin(base_path, url)
 
 
-def is_absolute(url) -> bool:
+def is_absolute(url: str) -> bool:
+    """
+    Decide if an ULR is absolute.
+    An absolute URL is the full URL, including protocol (http/https), the optional subdomain (e.g. www), domain
+    (example.com), and path (which includes the directory and slug).
+    :param url: URL string
+    :return: True if the URL is absolute otherwise False
+    """
     return bool(urlparse(url).netloc)
 
 
@@ -70,6 +99,8 @@ def traverse_directory(config: Config) -> None:
     """
     Traverse source directory. Transform markdown (.md) files into HTML files. Render this files into the source
     directory. Copy other non-excluded files into source_directory.
+    :param config: config object, representation of the JSON config file
+    :return: None
     """
     frames_to_exclude = set([frame.frame for frame in config.frames])
     print(f'Frames to exclude: {pprint.pformat(frames_to_exclude)}')
@@ -105,6 +136,7 @@ def traverse_directory(config: Config) -> None:
 
 def get_frame_for_file(current_directory: Path, file_name: str, frames, base_href: str) -> str:
     """
+    Return the frame for a markdown file as a string.
     :param current_directory: Path to the current directory
     :param file_name: Name of the file for which we want to get a frame
     :param frames: List with all the frames
@@ -132,6 +164,10 @@ def get_frame_for_file(current_directory: Path, file_name: str, frames, base_hre
 def render_markdown_page(path: Path, frame: str, config: Config) -> str:
     """
     Open markdown file and render it as HTML file. Prepend a header to this HTML file and append a footer to it (frame).
+    :param path: path to the markdown file
+    :param frame: HTML frame in string format
+    :param config: JSON config object
+    :return: frame + markdown content rendered as a HTML page
     """
     with open(path) as file:
         lines = []
@@ -152,6 +188,8 @@ def render_markdown_page(path: Path, frame: str, config: Config) -> str:
 def replace_md_with_html(html_doc: str) -> str:
     """
     Replace href attributes which end with .md (Markdown) with attributes which end with .html.
+    :param html_doc: HTML document as a string
+    :return: HTML document as a string
     """
     soup = BeautifulSoup(html_doc, 'html.parser')
     for a in soup.find_all('a'):
@@ -162,6 +200,12 @@ def replace_md_with_html(html_doc: str) -> str:
 
 
 def add_target_blank_to_external_urls(html_doc: str, base_href: str) -> str:
+    """
+    Add target="_blank" to <a> tags.
+    :param html_doc: HTML document as string
+    :param base_href: Base URL
+    :return: HTML document as a string
+    """
     soup = BeautifulSoup(html_doc, 'html.parser')
     for a in soup.find_all('a'):
         url = a['href']
@@ -173,7 +217,9 @@ def add_target_blank_to_external_urls(html_doc: str, base_href: str) -> str:
 
 def add_anchor_links(html_doc: str) -> str:
     """
-    Add anchor links to headings
+    Add anchor links to headings.
+    :param html_doc: HTML document as string
+    :return: HTML document as string
     """
     soup = BeautifulSoup(html_doc, 'html.parser')
     for title in soup.find_all('h2'):
@@ -186,6 +232,13 @@ def add_anchor_links(html_doc: str) -> str:
 
 
 def insert_og_meta(html_doc: str, config: Config, title: Optional[str] = None):
+    """
+    Add og:meta fields to the header of a HTML page.
+    :param html_doc: HTML page as a string
+    :param config: Config object
+    :param title: override for og:title
+    :return: updated HTML page as a string
+    """
     if config.meta:
         soup = BeautifulSoup(html_doc, 'html.parser')
         head = soup.find('head')
@@ -221,11 +274,23 @@ def insert_og_meta(html_doc: str, config: Config, title: Optional[str] = None):
 
 
 def write_file(page: str, path: Path) -> None:
+    """
+    Write the content of the `page` to the path location.
+    :param page: string with the content
+    :param path: path where the page content should be saved
+    :return: None
+    """
     with open(path, mode='w', newline='\n') as file:
         file.write(page)
 
 
 def copy_file(source_path: Path, destination_path: Path) -> None:
+    """
+    Copy a file from the source location to a target location.
+    :param source_path: source location
+    :param destination_path: target location
+    :return: None
+    """
     with open(source_path, 'rb') as source:
         with open(destination_path, 'wb') as destination:
             destination.write(source.read())

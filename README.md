@@ -1,6 +1,6 @@
 # ssg
 
-ssg - *Static Site Generator* used to generate my static site: [https://ernyoke.github.io](https://ernyoke.github.io/index.html)
+ssg - *Static Site Generator* used to generate my static site: [https://ervinszilagyi.dev](https://ervinszilagyi.dev)
 
 ## Install
 

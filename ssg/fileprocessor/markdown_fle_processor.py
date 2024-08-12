@@ -9,7 +9,7 @@ import markdown
 from bs4 import BeautifulSoup
 from slugify import slugify
 
-from ssg.config import Config
+from ssg.config import Config, MetaFields
 from ssg.fileprocessor.file_processor import FileProcessor
 
 
@@ -41,22 +41,28 @@ class MarkdownFileProcessor(FileProcessor):
             soup = BeautifulSoup(''.join(lines), 'html.parser')
             self._add_anchor_links(soup)
 
-            title, cover_image = None, None
+            meta = None
             for matcher in self.config.meta.matchers:
                 if fnmatch.fnmatch(self.path.as_posix(), matcher.file):
-                    if matcher.compute_from_content:
+                    if matcher.action == 'TAKE_FROM_CONTENT':
                         title = self._get_title_from_page(soup)
                         cover_image = self._get_cover_image(self.directory, self.file_name)
 
                         if cover_image is not None:
                             cover_image = str(cover_image.as_posix())
 
-                        if title is not None:
-                            for titleElement in soup.find_all('title'):
-                                titleElement.string = f'{title} - {self.config.hostname}'
+                        meta = MetaFields(title=title, image=cover_image, description=None, url=None)
+                    elif matcher.action == 'STATIC':
+                        title = matcher.meta_fields.title
+                        cover_image = matcher.meta_fields.image
+                        meta = MetaFields(title=title, image=cover_image, description=None, url=None)
                     break
 
-            self._insert_og_meta(soup, title, cover_image)
+            if meta is not None and meta.title is not None:
+                for titleElement in soup.find_all('title'):
+                    titleElement.string = f'{meta.title} - {self.config.hostname}'
+
+            self._insert_og_meta(soup, meta)
             self.content = soup.prettify()
 
     def _get_frame_for_file(self) -> str:
@@ -163,49 +169,40 @@ class MarkdownFileProcessor(FileProcessor):
             anchor_tag.string = '<<'
             title.append(anchor_tag)
 
-    def _insert_og_meta(self, soup: BeautifulSoup,
-                        title: Optional[str] = None,
-                        cover_image: Optional[str] = None):
+    def _insert_og_meta(self, soup: BeautifulSoup, meta: Optional[MetaFields]):
         """
         Add og:meta fields to the header of an HTML page.
         :param soup: HTML page as a BeautifulSoup object
-        :param title: override for og:title
-        :param cover_image: override for og:cover_image
+        :param meta: meta fields
         :return: updated HTML page as a string
         """
-        meta = self.config.meta.default
-        if meta:
-            head = soup.find('head')
-            if meta.title:
-                meta_title = soup.new_tag('meta', attrs={
-                    'property': 'og:title',
-                    'content': title if title else meta.title
-                })
-                head.append(meta_title)
-            if meta.description:
-                meta_description = soup.new_tag('meta', attrs={
-                    'property': 'og:description',
-                    'content': meta.description
-                })
-                head.append(meta_description)
-            if meta.url:
-                meta_url = soup.new_tag('meta', attrs={
-                    'property': 'og:url',
-                    'content': meta.url
-                })
-                head.append(meta_url)
-            if cover_image:
-                meta_image = soup.new_tag('meta', attrs={
-                    'property': 'og:image',
-                    'content': urljoin(self.config.base_href, cover_image)
-                })
-                head.append(meta_image)
-            elif meta.image:
-                meta_image = soup.new_tag('meta', attrs={
-                    'property': 'og:image',
-                    'content': urljoin(self.config.base_href, meta.image)
-                })
-                head.append(meta_image)
+        default_meta = self.config.meta.default
+        if meta is None:
+            meta = default_meta
+        head = soup.find('head')
+        meta_title = soup.new_tag('meta', attrs={
+            'property': 'og:title',
+            'content': meta.title if meta.title else default_meta.title
+        })
+        head.append(meta_title)
+
+        meta_description = soup.new_tag('meta', attrs={
+            'property': 'og:description',
+            'content': meta.description if meta.description else default_meta.description
+        })
+        head.append(meta_description)
+
+        meta_url = soup.new_tag('meta', attrs={
+            'property': 'og:url',
+            'content': meta.url if meta.url else default_meta.url
+        })
+        head.append(meta_url)
+
+        meta_image = soup.new_tag('meta', attrs={
+            'property': 'og:image',
+            'content': urljoin(self.config.base_href, meta.image if meta.image else default_meta.image)
+        })
+        head.append(meta_image)
 
     @staticmethod
     def _get_title_from_page(soup: BeautifulSoup) -> Optional[str]:
@@ -228,7 +225,8 @@ class MarkdownFileProcessor(FileProcessor):
         :param file_name: name of the current file
         :return: relative path to the cover image if it exists
         """
-        accepted_image_extensions = (".tif", ".tiff", ".jpg", ".jpeg", ".gif", ".png", ".eps", ".bmp", ".ppm", ".heif")
+        accepted_image_extensions = ('.tif', '.tiff', '.jpg', '.jpeg', '.gif', '.png', '.eps', ".bmp", '.ppm', '.heif',
+                                     '.avif')
         path = current_directory / file_name
         if not path.is_file():
             print(f'Error: could not get cover image for ${path}. Expected to be a file, it is a directory!')

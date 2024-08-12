@@ -46,8 +46,9 @@ class SSG:
 
             # Create the destination directories
             directory_to_create = self.config.destination
+            relative_destination_dir = current_directory.relative_to(self.config.source)
             if current_directory != self.config.source:
-                directory_to_create = self.config.destination / current_directory.relative_to(self.config.source)
+                directory_to_create = self.config.destination / relative_destination_dir
 
             if not directory_to_create.exists():
                 directory_to_create.mkdir()
@@ -57,11 +58,10 @@ class SSG:
                 if file_name.endswith('.md'):
                     md_file_processor = MarkdownFileProcessor(directory=current_directory,
                                                               file_name=file_name,
+                                                              destination_dir=directory_to_create,
                                                               config=self.config,
                                                               frames_cache=self.frames_cache)
-                    md_file_processor.render_html()
-                    md_file_processor.write_file(directory_to_create)
-                    print(f'Rendered {directory_to_create / md_file_processor.html_file_name}')
+                    md_file_processor.render_html(relative_destination_dir)
                 else:
                     SSG._copy_file(current_directory / file_name, directory_to_create / file_name)
                     print(f'Copied {directory_to_create / file_name}')

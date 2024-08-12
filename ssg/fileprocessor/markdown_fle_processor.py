@@ -10,20 +10,23 @@ from bs4 import BeautifulSoup
 from slugify import slugify
 
 from ssg.config import Config, MetaFields
-from ssg.fileprocessor.file_processor import FileProcessor
 
 
-class MarkdownFileProcessor(FileProcessor):
+class MarkdownFileProcessor:
     """
     Used to transform markdown files into html files.
     """
-    def __init__(self, directory: Path, file_name: str, config: Config, frames_cache: [str]):
-        super().__init__(directory, file_name)
+
+    def __init__(self, directory: Path, file_name: str, destination_dir: Path, config: Config, frames_cache: [str]):
+        self.directory = directory
+        self.file_name = file_name
+        self.destination_dir = destination_dir
+        self.path = directory / Path(file_name)
         self.config = config
         self.frames_cache = frames_cache
-        self.html_file_name = f'{Path(file_name).stem}.html'
+        self.soup = None
 
-    def render_html(self):
+    def render_html(self, relative_dir: Path):
         """
         Open markdown file and render it as HTML file. Prepend a header to this HTML file and append a footer to it.
         """
@@ -38,15 +41,15 @@ class MarkdownFileProcessor(FileProcessor):
                     lines.extend(md_lines)
                 else:
                     lines.append(line)
-            soup = BeautifulSoup(''.join(lines), 'html.parser')
-            self._add_anchor_links(soup)
+            self.soup = BeautifulSoup(''.join(lines), 'html.parser')
+            self._add_anchor_links()
 
             meta = None
             for matcher in self.config.meta.matchers:
                 if fnmatch.fnmatch(self.path.as_posix(), matcher.file):
                     if matcher.action == 'TAKE_FROM_CONTENT':
-                        title = self._get_title_from_page(soup)
-                        cover_image = self._get_cover_image(self.directory, self.file_name)
+                        title = self._get_title_from_page()
+                        cover_image = self._get_cover_image(self.directory, relative_dir, self.file_name)
 
                         if cover_image is not None:
                             cover_image = str(cover_image.as_posix())
@@ -59,11 +62,14 @@ class MarkdownFileProcessor(FileProcessor):
                     break
 
             if meta is not None and meta.title is not None:
-                for titleElement in soup.find_all('title'):
+                for titleElement in self.soup.find_all('title'):
                     titleElement.string = f'{meta.title} - {self.config.hostname}'
 
-            self._insert_og_meta(soup, meta)
-            self.content = soup.prettify()
+            self._insert_og_meta(self.soup, meta)
+
+            destination_path = self.destination_dir / Path(f'{Path(self.file_name).stem}.html')
+            self.write(destination_path)
+            print(f'Rendered {destination_path.as_posix()}')
 
     def _get_frame_for_file(self) -> str:
         """
@@ -156,16 +162,14 @@ class MarkdownFileProcessor(FileProcessor):
                 a['href'] = url.replace('.md', '.html')
         return str(soup)
 
-    @staticmethod
-    def _add_anchor_links(soup: BeautifulSoup):
+    def _add_anchor_links(self):
         """
         Add anchor links to headings.
-        :param soup: HTML document as a BeautifulSoup object
         """
-        for title in soup.find_all('h2'):
-            anchor_tag = soup.new_tag('a', attrs={'class': 'anchor-link',
-                                                  'href': f'#{slugify(title.text)}',
-                                                  'id': f'{slugify(title.text)}'})
+        for title in self.soup.find_all('h2'):
+            anchor_tag = self.soup.new_tag('a', attrs={'class': 'anchor-link',
+                                                       'href': f'#{slugify(title.text)}',
+                                                       'id': f'{slugify(title.text)}'})
             anchor_tag.string = '<<'
             title.append(anchor_tag)
 
@@ -204,21 +208,19 @@ class MarkdownFileProcessor(FileProcessor):
         })
         head.append(meta_image)
 
-    @staticmethod
-    def _get_title_from_page(soup: BeautifulSoup) -> Optional[str]:
+    def _get_title_from_page(self) -> Optional[str]:
         """
         Attempts to infer the title from the HTML page. It will look for h1, h2...h6 tags and return the first one found
         in the page.
-        :param soup: HTML page as a BeautifulSoup object
         :return: Title of the page as a string
         """
-        element = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        element = self.soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
         if element is not None:
             return element.text
         return None
 
     @staticmethod
-    def _get_cover_image(current_directory: Path, file_name: str) -> Optional[Path]:
+    def _get_cover_image(current_directory: Path, destination_dir: Path, file_name: str) -> Optional[Path]:
         """
         Returns the path of the cover image if it exists.
         :param current_directory: directory
@@ -246,8 +248,12 @@ class MarkdownFileProcessor(FileProcessor):
         if len(covers) > 1:
             print(f'Warning! Multiple cover images found for {path}! Choosing {covers[0]}')
 
-        return current_directory / Path(f'img-{path.stem}') / Path(covers[0])
+        return destination_dir / Path(f'img-{path.stem}') / Path(covers[0])
 
-    def write_file(self, destination_directory: Path) -> None:
-        destination_path = destination_directory / Path(self.html_file_name)
-        super().write_file(destination_path)
+    def write(self, destination_path: Path):
+        """
+        Write the HTML page to a file.
+        :param destination_path: destination path where to write the HTML page
+        """
+        with open(destination_path, mode='w', newline='\n') as destination_file:
+            destination_file.write(self.soup.prettify())

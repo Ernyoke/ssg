@@ -12,8 +12,24 @@
     },
     "matchers": [
       {
-        "file": "articles/*",
-        "computeFromContent": true
+        "file": "src/resume.md",
+        "action": "STATIC",
+        "meta": {
+          "og:title": "Resume - ervinszilagyi.dev",
+          "og:description": "Ervin's resume"
+        }
+      },
+      {
+        "file": "src/index.md",
+        "action": "USE_DEFAULT"
+      },
+      {
+        "file": "src/*.md",
+        "action": "TAKE_FROM_CONTENT"
+      },
+      {
+        "file": "src/articles/*",
+        "action": "TAKE_FROM_CONTENT"
       }
     ]
   },

@@ -65,7 +65,7 @@ class MarkdownFileProcessor:
                 for titleElement in self.soup.find_all('title'):
                     titleElement.string = f'{meta.title} - {self.config.hostname}'
 
-            self._insert_og_meta(self.soup, meta)
+            self._insert_og_meta(meta)
 
             destination_path = self.destination_dir / Path(f'{Path(self.file_name).stem}.html')
             self.write(destination_path)
@@ -173,36 +173,35 @@ class MarkdownFileProcessor:
             anchor_tag.string = '<<'
             title.append(anchor_tag)
 
-    def _insert_og_meta(self, soup: BeautifulSoup, meta: Optional[MetaFields]):
+    def _insert_og_meta(self, meta: Optional[MetaFields]):
         """
         Add og:meta fields to the header of an HTML page.
-        :param soup: HTML page as a BeautifulSoup object
         :param meta: meta fields
         :return: updated HTML page as a string
         """
         default_meta = self.config.meta.default
         if meta is None:
             meta = default_meta
-        head = soup.find('head')
-        meta_title = soup.new_tag('meta', attrs={
+        head = self.soup.find('head')
+        meta_title = self.soup.new_tag('meta', attrs={
             'property': 'og:title',
             'content': meta.title if meta.title else default_meta.title
         })
         head.append(meta_title)
 
-        meta_description = soup.new_tag('meta', attrs={
+        meta_description = self.soup.new_tag('meta', attrs={
             'property': 'og:description',
             'content': meta.description if meta.description else default_meta.description
         })
         head.append(meta_description)
 
-        meta_url = soup.new_tag('meta', attrs={
+        meta_url = self.soup.new_tag('meta', attrs={
             'property': 'og:url',
             'content': meta.url if meta.url else default_meta.url
         })
         head.append(meta_url)
 
-        meta_image = soup.new_tag('meta', attrs={
+        meta_image = self.soup.new_tag('meta', attrs={
             'property': 'og:image',
             'content': urljoin(self.config.base_href, meta.image if meta.image else default_meta.image)
         })

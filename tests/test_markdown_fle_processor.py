@@ -30,6 +30,7 @@ class TestMarkdownFileProcessor(TestCase):
             source=Path(),
             destination=Path(),
             base_href='https://base.dev',
+            hostname='base.dev',
             exclude=[],
             frames=[],
             meta=meta
@@ -38,17 +39,16 @@ class TestMarkdownFileProcessor(TestCase):
         md_file_processor = MarkdownFileProcessor(
             directory=Path('/tmp/'),
             file_name='test.md',
-            config=Config(source=Path('/tmp/config'),
-                          destination=Path('/tmp/config'),
-                          base_href='ervinszilagyi.test',
-                          exclude=[],
-                          frames=[],
-                          meta=meta),
+            destination_dir=Path('/tmp/dest'),
+            config=config,
             frames_cache=dict()
         )
 
-        rendered = BeautifulSoup(md_file_processor._insert_og_meta(page), 'html.parser')
-        head = rendered.find('head')
+        md_file_processor.soup = BeautifulSoup(page, 'html.parser')
+
+        md_file_processor._insert_og_meta(meta=None)
+
+        head = md_file_processor.soup.find('head')
 
         meta = [element for element in head.find_all('meta')]
         self.assertEqual(len(meta), 4)
@@ -60,7 +60,7 @@ class TestMarkdownFileProcessor(TestCase):
         self.assertIn('og:image', properties)
 
     def test_get_title_from_doc_h1(self):
-        doc = """
+        page = """
         <html>
             <body>
                 <div>date</div>
@@ -69,11 +69,39 @@ class TestMarkdownFileProcessor(TestCase):
             </body>
         </html>
         """
-        h1 = MarkdownFileProcessor._get_title_from_page(doc)
+
+        meta_fields = MetaFields(
+            title='Title',
+            description='Description',
+            url='https://example.dev',
+            image='image/dev.jpg'
+        )
+        meta = Meta(meta_fields, [])
+        config = Config(
+            source=Path(),
+            destination=Path(),
+            base_href='https://base.dev',
+            hostname='base.dev',
+            exclude=[],
+            frames=[],
+            meta=meta
+        )
+
+        md_file_processor = MarkdownFileProcessor(
+            directory=Path('/tmp/'),
+            file_name='test.md',
+            destination_dir=Path('/tmp/dest'),
+            config=config,
+            frames_cache=dict()
+        )
+
+        md_file_processor.soup = BeautifulSoup(page, 'html.parser')
+
+        h1 = md_file_processor._get_title_from_page()
         self.assertEqual('H1', h1)
 
     def test_get_title_from_doc_h2(self):
-        doc = """
+        page = """
         <html>
             <body>
                 <div>date</div>
@@ -82,15 +110,71 @@ class TestMarkdownFileProcessor(TestCase):
             </body>
         </html>
         """
-        h2 = MarkdownFileProcessor._get_title_from_page(doc)
+
+        meta_fields = MetaFields(
+            title='Title',
+            description='Description',
+            url='https://example.dev',
+            image='image/dev.jpg'
+        )
+        meta = Meta(meta_fields, [])
+        config = Config(
+            source=Path(),
+            destination=Path(),
+            base_href='https://base.dev',
+            hostname='base.dev',
+            exclude=[],
+            frames=[],
+            meta=meta
+        )
+
+        md_file_processor = MarkdownFileProcessor(
+            directory=Path('/tmp/'),
+            file_name='test.md',
+            destination_dir=Path('/tmp/dest'),
+            config=config,
+            frames_cache=dict()
+        )
+
+        md_file_processor.soup = BeautifulSoup(page, 'html.parser')
+
+        h2 = md_file_processor._get_title_from_page()
         self.assertEqual('H2', h2)
 
     def test_get_title_from_doc_none(self):
-        doc = """
+        page = """
         <html>
             <body>
+                <div>date</div>
             </body>
         </html>
         """
-        h1 = MarkdownFileProcessor._get_title_from_page(doc)
-        self.assertIsNone(h1)
+
+        meta_fields = MetaFields(
+            title='Title',
+            description='Description',
+            url='https://example.dev',
+            image='image/dev.jpg'
+        )
+        meta = Meta(meta_fields, [])
+        config = Config(
+            source=Path(),
+            destination=Path(),
+            base_href='https://base.dev',
+            hostname='base.dev',
+            exclude=[],
+            frames=[],
+            meta=meta
+        )
+
+        md_file_processor = MarkdownFileProcessor(
+            directory=Path('/tmp/'),
+            file_name='test.md',
+            destination_dir=Path('/tmp/dest'),
+            config=config,
+            frames_cache=dict()
+        )
+
+        md_file_processor.soup = BeautifulSoup(page, 'html.parser')
+
+        self.assertIsNone(md_file_processor._get_title_from_page())

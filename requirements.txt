@@ -4,18 +4,13 @@
 #
 #    pip-compile
 #
-beautifulsoup4==4.11.2
+beautifulsoup4==4.12.3
     # via -r requirements.in
-markdown==3.3.4
+markdown==3.4.4
     # via -r requirements.in
-six==1.16.0
-    # via unicode-slugify
-soupsieve==2.4
+python-slugify==8.0.4
+    # via -r requirements.in
+soupsieve==2.5
     # via beautifulsoup4
-unicode-slugify==0.1.5
-    # via -r requirements.in
-unidecode==1.3.6
-    # via unicode-slugify
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+text-unidecode==1.3
+    # via python-slugify

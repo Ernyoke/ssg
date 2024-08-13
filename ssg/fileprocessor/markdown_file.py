@@ -1,0 +1,37 @@
+from typing import Optional
+
+import markdown
+from bs4 import BeautifulSoup
+
+from ssg.fileprocessor.html_file import HTMLFile
+
+
+class MarkDownFile:
+    def __init__(self, content: str):
+        self.content = content
+
+    def read(self, path):
+        with open(path) as file:
+            self.content = file.read()
+
+    def convert_to_html(self) -> HTMLFile:
+        html_content = markdown.markdown(self.content, extensions=['fenced_code', 'tables', 'sane_lists'])
+        return HTMLFile(BeautifulSoup(html_content, 'html.parser'))
+
+    def get_title(self) -> Optional[str]:
+        """
+        Attempts to infer the title from the HTML page. It will look for h1, h2...h6 tags and return the first one found
+        in the page.
+        :return: Title of the page as a string
+        """
+        html_content = markdown.markdown(self.content, extensions=['fenced_code', 'tables', 'sane_lists'])
+        soup = BeautifulSoup(html_content, 'html.parser')
+        element = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        if element is not None:
+            return element.text
+        return None
+
+    @staticmethod
+    def read_from_file(path):
+        with open(path) as file:
+            return MarkDownFile(file.read())

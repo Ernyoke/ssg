@@ -10,6 +10,7 @@ dist/
 ssg.egg-info
 ssg/__pycache__/
 __pycache__/
+.venv
 
 config.local.json
 config.remote.json

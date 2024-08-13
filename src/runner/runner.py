@@ -2,8 +2,8 @@ import os
 import pprint
 from pathlib import Path
 
-from ssg.config import Config
-from ssg.fileprocessor.markdown_fle_processor import MarkdownFileProcessor
+from config import Config
+from fileprocessor.markdown_fle_processor import MarkdownFileProcessor
 
 
 class SSG:

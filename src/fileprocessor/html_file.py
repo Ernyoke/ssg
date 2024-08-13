@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 from slugify import slugify
 
-from ssg.config import MetaFields
+from config import MetaFields
 
 
 class HTMLFile:

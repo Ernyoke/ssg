@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urljoin
 import bs4
 from bs4 import BeautifulSoup
 
-from ssg.fileprocessor.html_file import HTMLFile
+from fileprocessor.html_file import HTMLFile
 
 
 class Frame:

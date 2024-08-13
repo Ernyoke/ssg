@@ -8,7 +8,7 @@ pyvenv.cfg
 Scripts/
 dist/
 ssg.egg-info
-ssg/__pycache__/
+src/ssg/__pycache__/
 __pycache__/
 .venv
 

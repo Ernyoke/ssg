@@ -3,10 +3,10 @@ import glob
 from pathlib import Path
 from typing import Optional
 
-from ssg.config import Config, MetaFields
-from ssg.fileprocessor.frame import Frame
-from ssg.fileprocessor.html_file import HTMLFile
-from ssg.fileprocessor.markdown_file import MarkDownFile
+from config import Config, MetaFields
+from fileprocessor.frame import Frame
+from fileprocessor.html_file import HTMLFile
+from fileprocessor.markdown_file import MarkDownFile
 
 
 class MarkdownFileProcessor:

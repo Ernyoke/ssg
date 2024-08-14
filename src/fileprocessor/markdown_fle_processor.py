@@ -1,7 +1,9 @@
+import copy
 import fnmatch
 import glob
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urljoin
 
 from config import Config, MetaFields
 from fileprocessor.frame import Frame
@@ -31,27 +33,29 @@ class MarkdownFileProcessor:
         html_file.add_target_blank_to_external_urls(self.config.base_href)
         html_file.add_anchor_links()
 
-        meta = None
+        meta = copy.deepcopy(self.config.meta.default)
         for matcher in self.config.meta.matchers:
             if fnmatch.fnmatch(self.path.as_posix(), matcher.file):
                 if matcher.action == 'TAKE_FROM_CONTENT':
-                    title = md_file.get_title()
+                    meta.title = md_file.get_title()
                     cover_image = self._get_cover_image(relative_dir)
 
                     if cover_image is not None:
-                        cover_image = str(cover_image.as_posix())
+                        meta.image = str(cover_image.as_posix())
 
-                    meta = MetaFields(title=title, image=cover_image, description=None, url=None)
+                    meta.url = urljoin(self.config.base_href, f'{Path(self.file_name).stem}.html')
+
                 elif matcher.action == 'STATIC':
-                    title = matcher.meta_fields.title
-                    cover_image = matcher.meta_fields.image
-                    meta = MetaFields(title=title, image=cover_image, description=None, url=None)
+                    if matcher.meta_fields.title is not None:
+                        meta.title = matcher.meta_fields.title
+                    if matcher.meta_fields.image is not None:
+                        meta.image = matcher.meta_fields.image
                 break
 
-        if meta is not None and meta.title is not None:
+        if meta.title is not None:
             html_file.set_title(meta.title, self.config.hostname)
 
-        html_file.insert_og_meta(self.config.meta.default, self.config.base_href, meta)
+        html_file.insert_og_meta(meta, self.config.base_href)
 
         destination_path = self.destination_dir / Path(f'{Path(self.file_name).stem}.html')
         html_file.write(destination_path)

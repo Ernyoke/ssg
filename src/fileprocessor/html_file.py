@@ -51,42 +51,76 @@ class HTMLFile:
             title.append(anchor_tag)
 
     def insert_og_meta(self,
-                       default_meta: MetaFields,
-                       base_href: str,
-                       meta: Optional[MetaFields] = None):
+                       meta: MetaFields,
+                       base_href: str):
         """
         Add og:meta fields to the header of an HTML page.
-        :param default_meta: default meta fields
-        :param base_href: base url
         :param meta: meta fields
+        :param base_href: base url
         :return: updated HTML page as a string
         """
-        if meta is None:
-            meta = default_meta
         head = self.soup.find('head')
         meta_title = self.soup.new_tag('meta', attrs={
             'property': 'og:title',
-            'content': meta.title if meta.title else default_meta.title
+            'content': meta.title
         })
         head.append(meta_title)
 
         meta_description = self.soup.new_tag('meta', attrs={
             'property': 'og:description',
-            'content': meta.description if meta.description else default_meta.description
+            'content': meta.description
         })
         head.append(meta_description)
 
         meta_url = self.soup.new_tag('meta', attrs={
             'property': 'og:url',
-            'content': meta.url if meta.url else default_meta.url
+            'content': meta.url
         })
         head.append(meta_url)
 
         meta_image = self.soup.new_tag('meta', attrs={
             'property': 'og:image',
-            'content': urljoin(base_href, meta.image if meta.image else default_meta.image)
+            'content': urljoin(base_href, meta.image)
         })
         head.append(meta_image)
+
+        # Twitter specific meta tags
+        twitter_meta_title = self.soup.new_tag('meta', attrs={
+            'property': 'twitter:title',
+            'content': meta.title
+        })
+        head.append(twitter_meta_title)
+
+        twitter_meta_description = self.soup.new_tag('meta', attrs={
+            'property': 'twitter:description',
+            'content': meta.description
+        })
+        head.append(twitter_meta_description)
+
+        twitter_meta_site = self.soup.new_tag('meta', attrs={
+            'property': 'twitter:site',
+            'content': meta.twitter_handle
+        })
+        head.append(twitter_meta_site)
+
+        twitter_meta_creator = self.soup.new_tag('meta', attrs={
+            'property': 'twitter:creator',
+            'content': meta.twitter_handle
+        })
+        head.append(twitter_meta_creator)
+
+        twitter_meta_image = self.soup.new_tag('meta', attrs={
+            'property': 'twitter:image',
+            'content': urljoin(base_href, meta.image)
+        })
+        head.append(twitter_meta_image)
+
+        twitter_meta_card = self.soup.new_tag('meta', attrs={
+            'property': 'twitter:card',
+            'content': 'summary_large_image'
+        })
+        head.append(twitter_meta_card)
+
 
     def set_title(self, title, hostname=None):
         """

@@ -13,6 +13,7 @@ class MetaFields:
     image: Optional[str]
     description: Optional[str]
     url: Optional[str]
+    twitter_handle: Optional[str]
 
 
 @dataclass
@@ -69,7 +70,8 @@ class Config:
             default = MetaFields(title=default_meta_dict.get('og:title', ''),
                                  image=default_meta_dict.get('og:image', ''),
                                  description=default_meta_dict.get('og:description', ''),
-                                 url=default_meta_dict.get('og:url', ''))
+                                 url=default_meta_dict.get('og:url', ''),
+                                 twitter_handle=default_meta_dict.get('twitter_handle', ''),)
             matchers = []
             for m in meta_dict.get('matchers', []):
                 if m['action'] == 'STATIC':
@@ -79,7 +81,8 @@ class Config:
                     meta_fields = MetaFields(title=fields.get('og:title', None),
                                              image=fields.get('og:image', None),
                                              description=fields.get('og:description', None),
-                                             url=fields.get('og:url', None))
+                                             url=fields.get('og:url', None),
+                                             twitter_handle=fields.get('twitter_handle', None))
                     matchers.append(Matcher(file=m['file'], action=m['action'], meta_fields=meta_fields))
                 elif m['action'] == 'TAKE_FROM_CONTENT' or m['action'] == 'USE_DEFAULT':
                     matchers.append(Matcher(file=m['file'], action=m['action'], meta_fields=None))

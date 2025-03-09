@@ -2,6 +2,7 @@ from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
+from lxml import html, etree
 from slugify import slugify
 
 from config import MetaFields
@@ -120,7 +121,6 @@ class HTMLFile:
         })
         head.append(twitter_meta_card)
 
-
     def set_title(self, title, hostname=None):
         """
         Set the HTML title from the head of the document.
@@ -139,4 +139,11 @@ class HTMLFile:
         :param destination_path: destination path where to write the HTML page
         """
         with open(destination_path, mode='w', newline='\n') as destination_file:
-            destination_file.write(str(self.soup))
+            # Parse the HTML string
+            tree = html.fromstring(str(self.soup))
+
+            # Convert to a pretty-printed string
+            formatted_html = etree.tostring(tree, pretty_print=True, method="html", encoding="unicode")
+
+            # Output the formatted HTML
+            destination_file.write(formatted_html)

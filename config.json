@@ -46,5 +46,11 @@
       "file": "*.md",
       "frame": "index_frame.html"
     }
+  ],
+  "rss": [
+    {
+      "match": "src/articles/*.md",
+      "publishDates": "publishdates.json"
+    }
   ]
 }

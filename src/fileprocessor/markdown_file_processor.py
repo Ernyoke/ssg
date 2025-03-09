@@ -9,6 +9,7 @@ from config import Config, MetaFields
 from fileprocessor.frame import Frame
 from fileprocessor.html_file import HTMLFile
 from fileprocessor.markdown_file import MarkDownFile
+from rss.rss_builder import RSSBuilder
 
 
 class MarkdownFileProcessor:
@@ -16,12 +17,19 @@ class MarkdownFileProcessor:
     Used to transform markdown files into html files.
     """
 
-    def __init__(self, directory: Path, file_name: str, destination_dir: Path, config: Config, frames_cache: [Frame]):
+    def __init__(self,
+                 directory: Path,
+                 file_name: str,
+                 destination_dir: Path,
+                 config: Config,
+                 frames_cache: [Frame],
+                 rss_builder: RSSBuilder):
         self.file_name = file_name
         self.destination_dir = destination_dir
         self.path = directory / Path(file_name)
         self.config = config
         self.frames_cache = frames_cache
+        self.rss_builder = rss_builder
 
     def render_html(self, relative_dir: Path):
         """
@@ -56,10 +64,13 @@ class MarkdownFileProcessor:
             html_file.set_title(meta.title, self.config.hostname)
 
         html_file.insert_og_meta(meta, self.config.base_href)
+        file_name_clean = Path(self.file_name).stem
 
-        destination_path = self.destination_dir / Path(f'{Path(self.file_name).stem}.html')
+        destination_path = self.destination_dir / Path(f'{Path(file_name_clean)}.html')
         html_file.write(destination_path)
         print(f'Rendered {destination_path.as_posix()}')
+
+        self.rss_builder.create_item_if_match(self.path, meta.title, file_name_clean, meta.url, "Ervin Szilagyi")
 
     def _get_frame_for_file(self) -> Frame:
         """

@@ -38,6 +38,12 @@ class Frame:
 
 
 @dataclass
+class Rss:
+    match: str
+    publish_dates: Path
+
+
+@dataclass
 class Config:
     """
     Data class for holding data from config.json file.
@@ -49,6 +55,7 @@ class Config:
     exclude: [str]
     meta: Optional[Meta]
     frames: List[Frame]
+    rss: Rss
 
     @staticmethod
     def from_json(json_config: dict) -> Config:
@@ -92,13 +99,16 @@ class Config:
 
         frames = [Frame(frame['file'], Path(frame['frame'])) for frame in json_config['frames']]
 
+        rss = Rss(match=json_config['rss']['match'], publish_dates=json_config['rss']['publishDates'])
+
         return Config(source=Path(json_config['source']),
                       destination=Path(json_config['destination']),
                       hostname=json_config['hostname'],
                       base_href=json_config['baseHref'],
                       exclude=json_config.get('exclude', ['.git', 'ignore', 'README.md']),
                       meta=meta,
-                      frames=frames)
+                      frames=frames,
+                      rss=rss)
 
 
 def read_config(path: Path) -> Config:

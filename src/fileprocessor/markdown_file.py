@@ -9,6 +9,9 @@ from fileprocessor.html_file import HTMLFile
 class MarkDownFile:
     def __init__(self, content: str):
         self.content = content
+        self.extensions = ['extra',
+                           'sane_lists',
+                           'smarty']
 
     def read(self, path):
         with open(path) as file:
@@ -16,9 +19,7 @@ class MarkDownFile:
 
     def convert_to_html(self) -> HTMLFile:
         html_content = markdown.markdown(self.content,
-                                         extensions=['extra',
-                                                     'sane_lists',
-                                                     'smarty'])
+                                         extensions=self.extensions)
         return HTMLFile(BeautifulSoup(html_content, 'lxml'))
 
     def get_title(self) -> Optional[str]:
@@ -27,7 +28,7 @@ class MarkDownFile:
         in the page.
         :return: Title of the page as a string
         """
-        html_content = markdown.markdown(self.content, extensions=['fenced_code', 'tables', 'sane_lists'])
+        html_content = markdown.markdown(self.content, extensions=self.extensions)
         soup = BeautifulSoup(html_content, 'lxml')
         element = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
         if element is not None:

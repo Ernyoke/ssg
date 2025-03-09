@@ -3,7 +3,8 @@ import pprint
 from pathlib import Path
 
 from config import Config
-from fileprocessor.markdown_fle_processor import MarkdownFileProcessor
+from fileprocessor.markdown_file_processor import MarkdownFileProcessor
+from rss.rss_builder import RSSBuilder
 
 
 class SSG:
@@ -18,6 +19,7 @@ class SSG:
 
     def __init__(self, config: Config):
         self.config = config
+        self.rss_builder = RSSBuilder(config)
 
     def run(self) -> None:
         """
@@ -26,6 +28,7 @@ class SSG:
         :return: None
         """
         self._traverse_directory()
+        self.rss_builder.render_rss(self.config.destination / Path('rss.xml'))
 
     def _traverse_directory(self) -> None:
         """

@@ -15,7 +15,7 @@ class Frame:
     """
 
     def __init__(self, content: str):
-        self.soup = BeautifulSoup(content, 'html.parser')
+        self.soup = BeautifulSoup(content, 'lxml')
 
     @staticmethod
     def read_from_file(path: Path):

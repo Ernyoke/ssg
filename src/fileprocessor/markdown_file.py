@@ -15,8 +15,11 @@ class MarkDownFile:
             self.content = file.read()
 
     def convert_to_html(self) -> HTMLFile:
-        html_content = markdown.markdown(self.content, extensions=['fenced_code', 'tables', 'sane_lists'])
-        return HTMLFile(BeautifulSoup(html_content, 'html.parser'))
+        html_content = markdown.markdown(self.content,
+                                         extensions=['extra',
+                                                     'sane_lists',
+                                                     'smarty'])
+        return HTMLFile(BeautifulSoup(html_content, 'lxml'))
 
     def get_title(self) -> Optional[str]:
         """
@@ -25,7 +28,7 @@ class MarkDownFile:
         :return: Title of the page as a string
         """
         html_content = markdown.markdown(self.content, extensions=['fenced_code', 'tables', 'sane_lists'])
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'lxml')
         element = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
         if element is not None:
             return element.text

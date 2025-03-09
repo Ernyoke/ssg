@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
@@ -140,4 +139,4 @@ class HTMLFile:
         :param destination_path: destination path where to write the HTML page
         """
         with open(destination_path, mode='w', newline='\n') as destination_file:
-            destination_file.write(self.soup.prettify())
+            destination_file.write(str(self.soup))

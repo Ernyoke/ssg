@@ -10,8 +10,7 @@ class MarkDownFile:
     def __init__(self, content: str):
         self.content = content
         self.extensions = ['extra',
-                           'sane_lists',
-                           'smarty']
+                           'sane_lists']
 
     def read(self, path):
         with open(path) as file:

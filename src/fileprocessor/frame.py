@@ -23,7 +23,7 @@ class Frame:
         Read a frame from a file.
         :param path: Path to the file.
         """
-        with open(path) as file:
+        with open(path, encoding='utf-8') as file:
             return Frame(file.read())
 
     def embed_content(self, html_file: HTMLFile, content_element_id="main-content") -> BeautifulSoup:

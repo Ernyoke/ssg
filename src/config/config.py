@@ -107,6 +107,6 @@ def read_config(path: Path) -> Config:
     :param path: path of the config file
     :return: a Config object with all the properties from the config file.
     """
-    with open(path, 'r') as file:
+    with open(path, 'r', encoding='utf-8') as file:
         config = json.load(file)
         return Config.from_json(config)

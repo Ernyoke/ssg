@@ -10,10 +10,11 @@ class MarkDownFile:
     def __init__(self, content: str):
         self.content = content
         self.extensions = ['extra',
-                           'sane_lists']
+                           'sane_lists',
+                           'smarty']
 
     def read(self, path):
-        with open(path) as file:
+        with open(path, encoding='utf-8') as file:
             self.content = file.read()
 
     def convert_to_html(self) -> HTMLFile:
@@ -36,5 +37,5 @@ class MarkDownFile:
 
     @staticmethod
     def read_from_file(path):
-        with open(path) as file:
+        with open(path, encoding='utf-8') as file:
             return MarkDownFile(file.read())

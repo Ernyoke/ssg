@@ -138,7 +138,7 @@ class HTMLFile:
         Write the HTML page to a file.
         :param destination_path: destination path where to write the HTML page
         """
-        with open(destination_path, mode='w', newline='\n') as destination_file:
+        with open(destination_path, mode='w', newline='\n', encoding='utf-8') as destination_file:
             # Parse the HTML string
             tree = html.fromstring(str(self.soup))
 

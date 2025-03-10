@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
 
-from config import Config, MetaFields
+from config import Config
 from fileprocessor.frame import Frame
 from fileprocessor.html_file import HTMLFile
 from fileprocessor.markdown_file import MarkDownFile

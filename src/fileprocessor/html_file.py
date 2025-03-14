@@ -127,8 +127,8 @@ class HTMLFile:
 
         if last_edited_time:
             last_updated = self.soup.new_tag('meta', attrs={
-                'property': 'last-updated',
-                'content': last_edited_time.strftime("%Y-%m-%d %H:%M:%S %Z")
+                'name': 'last-updated',
+                'content': last_edited_time.strftime('%Y-%m-%d %H:%M:%S %Z')
             })
             head.append(last_updated)
 

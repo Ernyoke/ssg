@@ -1,6 +1,7 @@
 import copy
 import fnmatch
 import glob
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
@@ -16,10 +17,15 @@ class MarkdownFileProcessor:
     Used to transform markdown files into html files.
     """
 
-    def __init__(self, directory: Path, file_name: str, destination_dir: Path, config: Config, frames_cache: [Frame]):
+    def __init__(self, path: Path, file_name: str,
+                 destination_dir: Path,
+                 last_edited_time: Optional[datetime],
+                 config: Config,
+                 frames_cache: [Frame]):
         self.file_name = file_name
         self.destination_dir = destination_dir
-        self.path = directory / Path(file_name)
+        self.last_edited_time = last_edited_time
+        self.path = path
         self.config = config
         self.frames_cache = frames_cache
 
@@ -55,7 +61,7 @@ class MarkdownFileProcessor:
         if meta.title is not None:
             html_file.set_title(meta.title, self.config.hostname)
 
-        html_file.insert_og_meta(meta, self.config.base_href)
+        html_file.insert_og_meta(meta, self.config.base_href, self.last_edited_time)
 
         destination_path = self.destination_dir / Path(f'{Path(self.file_name).stem}.html')
         html_file.write(destination_path)

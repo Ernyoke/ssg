@@ -1,4 +1,6 @@
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 from urllib.parse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
@@ -52,11 +54,13 @@ class HTMLFile:
 
     def insert_og_meta(self,
                        meta: MetaFields,
-                       base_href: str):
+                       base_href: str,
+                       last_edited_time: Optional[datetime]):
         """
         Add og:meta fields to the header of an HTML page.
         :param meta: meta fields
         :param base_href: base url
+        :last_edited_time: optional datetime when the file was last edited. In case this value is null, the "last-updated" meta won't be added to the page
         :return: updated HTML page as a string
         """
         head = self.soup.find('head')
@@ -120,6 +124,13 @@ class HTMLFile:
             'content': 'summary_large_image'
         })
         head.append(twitter_meta_card)
+
+        if last_edited_time:
+            last_updated = self.soup.new_tag('meta', attrs={
+                'property': 'last-updated',
+                'content': last_edited_time.strftime("%Y-%m-%d %H:%M:%S %Z")
+            })
+            head.append(last_updated)
 
     def set_title(self, title, hostname=None):
         """

@@ -11,7 +11,8 @@ class MarkDownFile:
         self.content = content
         self.extensions = ['extra',
                            'sane_lists',
-                           'smarty']
+                           'smarty',
+                           'pymdownx.tilde']
 
     def read(self, path):
         with open(path, encoding='utf-8') as file:

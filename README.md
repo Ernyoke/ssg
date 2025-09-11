@@ -5,7 +5,7 @@ ssg - *Static Site Generator* used to generate my static site: [https://ervinszi
 ## Install
 
 ```bash
-pipx install git+ssh://git@github.com/Ernyoke/ssg.git
+uvx git+https://github.com/thisdavej/wordlookup-tutorial.git
 ```
 
 ## Usage
@@ -73,72 +73,14 @@ positional arguments:
 
 ## Development
 
-### Generate `requirements.txt`
+### Building the app
 
 ```bash
-pip3 install pipreqs
-pip3 install pip-tools
-
-pipreqs --savepath=requirements.in && pip-compile
+uv build
 ```
 
-### Windows
+### Installing from local whl
 
-1. Clone the project:
-
-    ```bash
-    git clone git@github.com:Ernyoke/ervin-szilagyi-static-site.git
-    ```
-
-2. `cd` into the `ssg` folder
-
-3. Create a virtual environment:
-
-    ```bash
-    python -m venv .
-    ```
-
-4. Activate the virtual environment:
-
-    ```bash
-    .\Scripts\activate.ps1
-    ```
-
-5. Install dependencies:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-6. Run `ssg`
-
-### Unix
-
-1. Clone the project:
-
-    ```bash
-    git clone git@github.com:Ernyoke/ervin-szilagyi-static-site.git
-    ```
-
-2. `cd` into the `ssg` folder
-
-3. Create a virtual environment:
-
-    ```bash
-    virtualenv -p python3 .
-    ```
-
-4. Activate the virtual environment:
-
-    ```bash
-    chmod +x ./bin/activate
-    source ./bin/activate
-    ```
-
-5. Install dependencies:
-
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-
-6. Run `ssg`
+```bash
+uv install
+```

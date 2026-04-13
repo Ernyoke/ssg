@@ -1,9 +1,7 @@
-import shutil
-import tempfile
-from pathlib import Path
-from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from datetime import datetime, UTC
+from unittest.mock import MagicMock, patch
 
+import pytest
 from bs4 import BeautifulSoup
 
 from config.config import Config, Meta, MetaFields, Matcher, Frame as ConfigFrame
@@ -31,231 +29,220 @@ This is a test article.
 Some content here.
 """
 
+pytestmark = pytest.mark.integration
 
-class TestSSGIntegration(TestCase):
 
-    def setUp(self):
-        self.test_dir = tempfile.mkdtemp()
-        self.source_dir = Path(self.test_dir) / 'source'
-        self.destination_dir = Path(self.test_dir) / 'destination'
-        self.source_dir.mkdir()
-        self.destination_dir.mkdir()
+# ------------------------------------------------------------------
+# Fixtures
+# ------------------------------------------------------------------
 
-        # Create frame file (absolute path so frames_to_exclude check works)
-        self.frame_path = self.source_dir / 'frame.html'
-        self.frame_path.write_text(MINIMAL_FRAME_HTML, encoding='utf-8')
+@pytest.fixture()
+def source_dir(tmp_path):
+    d = tmp_path / "source"
+    d.mkdir()
+    return d
 
-        # Create a sample Markdown file
-        self.md_file = self.source_dir / 'test.md'
-        self.md_file.write_text(SAMPLE_MARKDOWN, encoding='utf-8')
 
-    def tearDown(self):
-        shutil.rmtree(self.test_dir)
+@pytest.fixture()
+def destination_dir(tmp_path):
+    d = tmp_path / "destination"
+    d.mkdir()
+    return d
 
-    def _make_config(self, extra_matchers=None, exclude=None):
-        default_meta = MetaFields(
-            title='Test Site',
-            image='images/cover.png',
-            description='Test description.',
-            url='https://example.com',
-            twitter_handle='@test'
-        )
-        matchers = [Matcher(file='*.md', action='TAKE_FROM_CONTENT', meta_fields=None)]
-        if extra_matchers:
-            matchers = extra_matchers + matchers
-        meta = Meta(default=default_meta, matchers=matchers)
-        # Use absolute frame path so that frames_to_exclude correctly filters the frame file
-        frame = ConfigFrame(file='*.md', frame=self.frame_path)
-        return Config(
-            source=self.source_dir,
-            destination=self.destination_dir,
-            base_href='https://example.com/',
-            hostname='example.com',
-            exclude=exclude or [],
-            meta=meta,
-            frames=[frame]
-        )
 
-    def _run_ssg(self, config):
-        """Helper that runs SSG with the git client mocked out."""
-        with patch('git.GitClient') as mock_git_client_class:
-            mock_instance = MagicMock()
-            mock_instance.get_last_edit_time_for_files.return_value = {}
-            mock_git_client_class.return_value = mock_instance
-            SSG(config).run()
+@pytest.fixture()
+def frame_file(source_dir):
+    """Write the minimal frame HTML and return its path."""
+    p = source_dir / "frame.html"
+    p.write_text(MINIMAL_FRAME_HTML, encoding="utf-8")
+    return p
 
-    # ------------------------------------------------------------------
-    # Core rendering
-    # ------------------------------------------------------------------
 
-    def test_markdown_is_converted_to_html(self):
-        """A Markdown file in the source directory must be rendered as an HTML file."""
-        config = self._make_config()
-        self._run_ssg(config)
+@pytest.fixture()
+def md_file(source_dir):
+    """Write the sample Markdown file and return its path."""
+    p = source_dir / "test.md"
+    p.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+    return p
 
-        output_file = self.destination_dir / 'test.html'
-        self.assertTrue(output_file.exists(), f'Expected output file {output_file} to exist')
-        content = output_file.read_text(encoding='utf-8')
-        self.assertIn('Hello World', content)
-        self.assertIn('Section One', content)
-        self.assertIn('Some content here', content)
 
-    def test_output_html_contains_og_meta_tags(self):
-        """Rendered HTML must contain Open Graph meta tags from the config."""
-        config = self._make_config()
-        self._run_ssg(config)
+def _make_config(source_dir, destination_dir, frame_path, extra_matchers=None, exclude=None):
+    default_meta = MetaFields(
+        title="Test Site",
+        image="images/cover.png",
+        description="Test description.",
+        url="https://example.com",
+        twitter_handle="@test",
+    )
+    matchers = [Matcher(file="*.md", action="TAKE_FROM_CONTENT", meta_fields=None)]
+    if extra_matchers:
+        matchers = extra_matchers + matchers
+    meta = Meta(default=default_meta, matchers=matchers)
+    frame = ConfigFrame(file="*.md", frame=frame_path)
+    return Config(
+        source=source_dir,
+        destination=destination_dir,
+        base_href="https://example.com/",
+        hostname="example.com",
+        exclude=exclude or [],
+        meta=meta,
+        frames=[frame],
+    )
 
-        content = (self.destination_dir / 'test.html').read_text(encoding='utf-8')
-        self.assertIn('og:title', content)
-        self.assertIn('og:description', content)
-        self.assertIn('og:url', content)
-        self.assertIn('og:image', content)
 
-    def test_output_html_title_derived_from_markdown_heading(self):
-        """With TAKE_FROM_CONTENT matcher the <title> tag must be set from the first heading."""
-        config = self._make_config()
-        self._run_ssg(config)
+def _run_ssg(config, git_timestamps=None):
+    """Run SSG with the git client mocked out."""
+    with patch("git.GitClient") as mock_class:
+        mock_instance = MagicMock()
+        mock_instance.get_last_edit_time_for_files.return_value = git_timestamps or {}
+        mock_class.return_value = mock_instance
+        SSG(config).run()
 
-        content = (self.destination_dir / 'test.html').read_text(encoding='utf-8')
-        soup = BeautifulSoup(content, 'lxml')
-        title_tag = soup.find('title')
-        self.assertIsNotNone(title_tag)
-        self.assertIn('Hello World', title_tag.text)
-        self.assertIn('example.com', title_tag.text)
 
-    def test_static_meta_matcher_overrides_title(self):
-        """With a STATIC matcher the og:title must be taken from the matcher's meta_fields."""
-        static_meta = MetaFields(
-            title='Overridden Title',
-            image=None,
-            description=None,
-            url=None,
-            twitter_handle=None
-        )
-        static_matcher = Matcher(file='*/test.md', action='STATIC', meta_fields=static_meta)
-        config = self._make_config(extra_matchers=[static_matcher])
-        self._run_ssg(config)
+# ------------------------------------------------------------------
+# Core rendering
+# ------------------------------------------------------------------
 
-        content = (self.destination_dir / 'test.html').read_text(encoding='utf-8')
-        self.assertIn('Overridden Title', content)
+def test_markdown_is_converted_to_html(source_dir, destination_dir, frame_file, md_file):
+    """A Markdown file in the source directory must be rendered as an HTML file."""
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
 
-    def test_markdown_links_converted_to_html_links(self):
-        """Hyperlinks pointing to .md files must be rewritten to .html in the output."""
-        (self.source_dir / 'linked.md').write_text(
-            '# Linked Page\n\n[Go to test](test.md)', encoding='utf-8'
-        )
-        config = self._make_config()
-        self._run_ssg(config)
+    output_file = destination_dir / "test.html"
+    assert output_file.exists(), f"Expected output file {output_file} to exist"
+    content = output_file.read_text(encoding="utf-8")
+    assert "Hello World" in content
+    assert "Section One" in content
+    assert "Some content here" in content
 
-        content = (self.destination_dir / 'linked.html').read_text(encoding='utf-8')
-        self.assertIn('test.html', content)
-        self.assertNotIn('test.md', content)
 
-    # ------------------------------------------------------------------
-    # File copying
-    # ------------------------------------------------------------------
+def test_output_html_contains_og_meta_tags(source_dir, destination_dir, frame_file, md_file):
+    """Rendered HTML must contain Open Graph meta tags from the config."""
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
 
-    def test_non_markdown_file_is_copied(self):
-        """Non-Markdown files (e.g. CSS, images) must be copied verbatim to the destination."""
-        css_file = self.source_dir / 'style.css'
-        css_content = 'body { margin: 0; }'
-        css_file.write_text(css_content, encoding='utf-8')
+    content = (destination_dir / "test.html").read_text(encoding="utf-8")
+    assert "og:title" in content
+    assert "og:description" in content
+    assert "og:url" in content
+    assert "og:image" in content
 
-        config = self._make_config()
-        self._run_ssg(config)
 
-        copied = self.destination_dir / 'style.css'
-        self.assertTrue(copied.exists())
-        self.assertEqual(copied.read_text(encoding='utf-8'), css_content)
+def test_output_html_title_derived_from_markdown_heading(source_dir, destination_dir, frame_file, md_file):
+    """With TAKE_FROM_CONTENT matcher the <title> tag must be set from the first heading."""
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
 
-    def test_frame_file_is_not_copied_to_destination(self):
-        """Frame HTML files must be excluded from the destination directory."""
-        config = self._make_config()
-        self._run_ssg(config)
+    soup = BeautifulSoup((destination_dir / "test.html").read_text(encoding="utf-8"), "lxml")
+    title_tag = soup.find("title")
+    assert title_tag is not None
+    assert "Hello World" in title_tag.text
+    assert "example.com" in title_tag.text
 
-        self.assertFalse((self.destination_dir / 'frame.html').exists())
 
-    # ------------------------------------------------------------------
-    # Exclusions
-    # ------------------------------------------------------------------
+def test_static_meta_matcher_overrides_title(source_dir, destination_dir, frame_file, md_file):
+    """With a STATIC matcher the og:title must be taken from the matcher's meta_fields."""
+    static_meta = MetaFields(title="Overridden Title", image=None, description=None, url=None, twitter_handle=None)
+    static_matcher = Matcher(file="*/test.md", action="STATIC", meta_fields=static_meta)
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file, extra_matchers=[static_matcher]))
 
-    def test_excluded_file_is_not_copied(self):
-        """Files listed in config.exclude must not appear in the destination."""
-        excluded = self.source_dir / 'README.md'
-        excluded.write_text('# README', encoding='utf-8')
+    assert "Overridden Title" in (destination_dir / "test.html").read_text(encoding="utf-8")
 
-        config = self._make_config(exclude=['README.md'])
-        self._run_ssg(config)
 
-        self.assertFalse((self.destination_dir / 'README.md').exists())
-        self.assertFalse((self.destination_dir / 'README.html').exists())
+def test_markdown_links_converted_to_html_links(source_dir, destination_dir, frame_file, md_file):
+    """Hyperlinks pointing to .md files must be rewritten to .html in the output."""
+    (source_dir / "linked.md").write_text("# Linked Page\n\n[Go to test](test.md)", encoding="utf-8")
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
 
-    def test_excluded_directory_is_skipped(self):
-        """Directories listed in config.exclude must be skipped entirely."""
-        ignored_dir = self.source_dir / 'ignored'
-        ignored_dir.mkdir()
-        (ignored_dir / 'secret.md').write_text('# Secret', encoding='utf-8')
+    content = (destination_dir / "linked.html").read_text(encoding="utf-8")
+    assert "test.html" in content
+    assert "test.md" not in content
 
-        config = self._make_config(exclude=['ignored'])
-        self._run_ssg(config)
 
-        self.assertFalse((self.destination_dir / 'ignored').exists())
+# ------------------------------------------------------------------
+# File copying
+# ------------------------------------------------------------------
 
-    # ------------------------------------------------------------------
-    # Subdirectory traversal
-    # ------------------------------------------------------------------
+def test_non_markdown_file_is_copied(source_dir, destination_dir, frame_file, md_file):
+    """Non-Markdown files (e.g. CSS, images) must be copied verbatim to the destination."""
+    css_content = "body { margin: 0; }"
+    (source_dir / "style.css").write_text(css_content, encoding="utf-8")
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
 
-    def test_subdirectory_structure_is_mirrored_in_destination(self):
-        """The output destination must mirror the subdirectory structure of the source."""
-        sub_dir = self.source_dir / 'articles'
-        sub_dir.mkdir()
-        (sub_dir / 'article.md').write_text('# My Article\n\nContent here.', encoding='utf-8')
+    copied = destination_dir / "style.css"
+    assert copied.exists()
+    assert copied.read_text(encoding="utf-8") == css_content
 
-        config = self._make_config()
-        self._run_ssg(config)
 
-        self.assertTrue((self.destination_dir / 'articles').is_dir())
-        self.assertTrue((self.destination_dir / 'articles' / 'article.html').exists())
+def test_frame_file_is_not_copied_to_destination(source_dir, destination_dir, frame_file, md_file):
+    """Frame HTML files must be excluded from the destination directory."""
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
+    assert not (destination_dir / "frame.html").exists()
 
-    def test_multiple_markdown_files_all_rendered(self):
-        """All Markdown files in the source directory must be rendered to the destination."""
-        (self.source_dir / 'page_a.md').write_text('# Page A\n\nContent A.', encoding='utf-8')
-        (self.source_dir / 'page_b.md').write_text('# Page B\n\nContent B.', encoding='utf-8')
 
-        config = self._make_config()
-        self._run_ssg(config)
+# ------------------------------------------------------------------
+# Exclusions
+# ------------------------------------------------------------------
 
-        self.assertTrue((self.destination_dir / 'test.html').exists())
-        self.assertTrue((self.destination_dir / 'page_a.html').exists())
-        self.assertTrue((self.destination_dir / 'page_b.html').exists())
+def test_excluded_file_is_not_copied(source_dir, destination_dir, frame_file, md_file):
+    """Files listed in config.exclude must not appear in the destination."""
+    (source_dir / "README.md").write_text("# README", encoding="utf-8")
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file, exclude=["README.md"]))
 
-    # ------------------------------------------------------------------
-    # Git last-edited timestamp
-    # ------------------------------------------------------------------
+    assert not (destination_dir / "README.md").exists()
+    assert not (destination_dir / "README.html").exists()
 
-    def test_last_edited_meta_tag_present_when_git_returns_timestamp(self):
-        """When the git client returns a timestamp, a 'last-updated' meta tag must appear in the output."""
-        from datetime import datetime, UTC
 
-        timestamp = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
+def test_excluded_directory_is_skipped(source_dir, destination_dir, frame_file, md_file):
+    """Directories listed in config.exclude must be skipped entirely."""
+    ignored = source_dir / "ignored"
+    ignored.mkdir()
+    (ignored / "secret.md").write_text("# Secret", encoding="utf-8")
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file, exclude=["ignored"]))
 
-        with patch('git.GitClient') as mock_git_client_class:
-            mock_instance = MagicMock()
-            mock_instance.get_last_edit_time_for_files.return_value = {
-                self.md_file: timestamp
-            }
-            mock_git_client_class.return_value = mock_instance
-            SSG(self._make_config()).run()
+    assert not (destination_dir / "ignored").exists()
 
-        content = (self.destination_dir / 'test.html').read_text(encoding='utf-8')
-        self.assertIn('last-updated', content)
-        self.assertIn('2025-06-15', content)
 
-    def test_last_edited_meta_tag_absent_when_git_returns_no_timestamp(self):
-        """When the git client returns no timestamp, no 'last-updated' meta tag should appear."""
-        config = self._make_config()
-        self._run_ssg(config)
+# ------------------------------------------------------------------
+# Subdirectory traversal
+# ------------------------------------------------------------------
 
-        content = (self.destination_dir / 'test.html').read_text(encoding='utf-8')
-        self.assertNotIn('last-updated', content)
+def test_subdirectory_structure_is_mirrored_in_destination(source_dir, destination_dir, frame_file, md_file):
+    """The output destination must mirror the subdirectory structure of the source."""
+    articles = source_dir / "articles"
+    articles.mkdir()
+    (articles / "article.md").write_text("# My Article\n\nContent here.", encoding="utf-8")
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
+
+    assert (destination_dir / "articles").is_dir()
+    assert (destination_dir / "articles" / "article.html").exists()
+
+
+def test_multiple_markdown_files_all_rendered(source_dir, destination_dir, frame_file, md_file):
+    """All Markdown files in the source directory must be rendered to the destination."""
+    (source_dir / "page_a.md").write_text("# Page A\n\nContent A.", encoding="utf-8")
+    (source_dir / "page_b.md").write_text("# Page B\n\nContent B.", encoding="utf-8")
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
+
+    assert (destination_dir / "test.html").exists()
+    assert (destination_dir / "page_a.html").exists()
+    assert (destination_dir / "page_b.html").exists()
+
+
+# ------------------------------------------------------------------
+# Git last-edited timestamp
+# ------------------------------------------------------------------
+
+def test_last_edited_meta_tag_present_when_git_returns_timestamp(source_dir, destination_dir, frame_file, md_file):
+    """When the git client returns a timestamp, a 'last-updated' meta tag must appear in the output."""
+    timestamp = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file), git_timestamps={md_file: timestamp})
+
+    content = (destination_dir / "test.html").read_text(encoding="utf-8")
+    assert "last-updated" in content
+    assert "2025-06-15" in content
+
+
+def test_last_edited_meta_tag_absent_when_git_returns_no_timestamp(source_dir, destination_dir, frame_file, md_file):
+    """When the git client returns no timestamp, no 'last-updated' meta tag should appear."""
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file))
+
+    assert "last-updated" not in (destination_dir / "test.html").read_text(encoding="utf-8")
 

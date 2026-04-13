@@ -3,7 +3,7 @@ from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
 import bs4
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from fileprocessor.html_file import HTMLFile
 
@@ -34,8 +34,9 @@ class Frame:
         """
         soup_copy = copy.deepcopy(self.soup)
         article = soup_copy.find('article', id=content_element_id)
-        article.clear()
-        article.append(html_file.soup)
+        if isinstance(article, Tag):
+            article.clear()
+            article.append(html_file.soup)
         return soup_copy
 
     def set_base_path(self, base_href: str):

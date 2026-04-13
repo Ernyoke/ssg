@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ssg"
-version = "0.10.0"
+version = "0.11.0"
 authors = [{name = "Ervin Szilagyi", email = "ervin_szilagyi@outlook.com"}]
 description = "Static site generator"
 keywords = ["static site generator"]
@@ -22,6 +22,12 @@ dependencies = [
     "python-slugify >= 8.0.4",
     "pygit2 >= 1.18.2",
     "pymdown-extensions >= 10.16.1",
+    "pytest>=9.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
 ]
 
 [project.readme]
@@ -42,3 +48,11 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+markers = [
+    "unit: fast, isolated unit tests",
+    "integration: slower tests that perform real file I/O",
+]

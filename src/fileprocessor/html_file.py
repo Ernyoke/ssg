@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse, urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from lxml import html, etree
 from slugify import slugify
 
@@ -24,9 +24,9 @@ class HTMLFile:
         Replace href attributes which end with .md (Markdown) with attributes which end with .html.
         """
         for a in self.soup.find_all('a'):
-            if 'href' in a.attrs:
+            if isinstance(a, Tag) and 'href' in a.attrs:
                 url = a['href']
-                if url.endswith('.md'):
+                if isinstance(url, str) and url.endswith('.md'):
                     a['href'] = url.replace('.md', '.html')
 
     def add_target_blank_to_external_urls(self, base_href: str):
@@ -35,10 +35,10 @@ class HTMLFile:
         :return: HTML document as a string
         """
         for a in self.soup.find_all('a'):
-            if 'href' in a.attrs:
+            if isinstance(a, Tag) and 'href' in a.attrs:
                 url = a['href']
                 # Check if url is absolute and does not start with a base path
-                if bool(urlparse(url).netloc) and not url.startswith(base_href):
+                if isinstance(url, str) and (bool(urlparse(url).netloc) and not url.startswith(base_href)):
                     a['target'] = '_blank'
 
     def add_anchor_links(self):
@@ -46,11 +46,12 @@ class HTMLFile:
         Add anchor links to headings.
         """
         for title in self.soup.find_all('h2'):
-            anchor_tag = self.soup.new_tag('a', attrs={'class': 'anchor-link',
-                                                       'href': f'#{slugify(title.text)}',
-                                                       'id': f'{slugify(title.text)}'})
-            anchor_tag.string = '<<'
-            title.append(anchor_tag)
+            if isinstance(title, Tag):
+                anchor_tag = self.soup.new_tag('a', attrs={'class': 'anchor-link',
+                                                           'href': f'#{slugify(title.text)}',
+                                                           'id': f'{slugify(title.text)}'})
+                anchor_tag.string = '<<'
+                title.append(anchor_tag)
 
     def insert_og_meta(self,
                        meta: MetaFields,
@@ -60,25 +61,29 @@ class HTMLFile:
         Add og:meta fields to the header of an HTML page.
         :param meta: meta fields
         :param base_href: base url
-        :last_edited_time: optional datetime when the file was last edited. In case this value is null, the "last-updated" meta won't be added to the page
+        :param last_edited_time: optional datetime when the file was last edited. In case this value is null, the "last-updated" meta won't be added to the page
         :return: updated HTML page as a string
         """
         head = self.soup.find('head')
+        if head is None or not isinstance(head, Tag):
+            print(f'Warning! Could not find head tag in HTML document. Skipping adding og:meta fields.')
+            return
+
         meta_title = self.soup.new_tag('meta', attrs={
             'property': 'og:title',
-            'content': meta.title
+            'content': meta.title or ''
         })
         head.append(meta_title)
 
         meta_description = self.soup.new_tag('meta', attrs={
             'property': 'og:description',
-            'content': meta.description
+            'content': meta.description or ''
         })
         head.append(meta_description)
 
         meta_url = self.soup.new_tag('meta', attrs={
             'property': 'og:url',
-            'content': meta.url
+            'content': meta.url or ''
         })
         head.append(meta_url)
 
@@ -91,25 +96,25 @@ class HTMLFile:
         # Twitter specific meta tags
         twitter_meta_title = self.soup.new_tag('meta', attrs={
             'property': 'twitter:title',
-            'content': meta.title
+            'content': meta.title or ''
         })
         head.append(twitter_meta_title)
 
         twitter_meta_description = self.soup.new_tag('meta', attrs={
             'property': 'twitter:description',
-            'content': meta.description
+            'content': meta.description or ''
         })
         head.append(twitter_meta_description)
 
         twitter_meta_site = self.soup.new_tag('meta', attrs={
             'property': 'twitter:site',
-            'content': meta.twitter_handle
+            'content': meta.twitter_handle or ''
         })
         head.append(twitter_meta_site)
 
         twitter_meta_creator = self.soup.new_tag('meta', attrs={
             'property': 'twitter:creator',
-            'content': meta.twitter_handle
+            'content': meta.twitter_handle or ''
         })
         head.append(twitter_meta_creator)
 
@@ -154,7 +159,7 @@ class HTMLFile:
             tree = html.fromstring(str(self.soup))
 
             # Convert to a pretty-printed string
-            formatted_html = etree.tostring(tree, pretty_print=True, method="html", encoding="unicode")
+            formatted_html = etree.tostring(tree, pretty_print=True, method="html", encoding="unicode")  # type: ignore[arg-type]
 
             # Output the formatted HTML
             destination_file.write(formatted_html)

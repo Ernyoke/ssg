@@ -84,3 +84,9 @@ uv build
 ```bash
 uv install
 ```
+
+### Running tests
+
+```bash
+uv run pytest tests/
+```

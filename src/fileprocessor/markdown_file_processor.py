@@ -21,7 +21,7 @@ class MarkdownFileProcessor:
                  destination_dir: Path,
                  last_edited_time: Optional[datetime],
                  config: Config,
-                 frames_cache: dict[str, Frame]):
+                 frames_cache: dict[Path, Frame]):
         self.file_name = file_name
         self.destination_dir = destination_dir
         self.last_edited_time = last_edited_time
@@ -39,29 +39,30 @@ class MarkdownFileProcessor:
         html_file.add_target_blank_to_external_urls(self.config.base_href)
         html_file.add_anchor_links()
 
-        meta = copy.deepcopy(self.config.meta.default)
-        for matcher in self.config.meta.matchers:
-            if fnmatch.fnmatch(self.path.as_posix(), matcher.file):
-                if matcher.action == 'TAKE_FROM_CONTENT':
-                    meta.title = md_file.get_title()
-                    cover_image = self._get_cover_image(relative_dir)
+        if self.config.meta is not None:
+            meta = copy.deepcopy(self.config.meta.default)
+            for matcher in self.config.meta.matchers:
+                if fnmatch.fnmatch(self.path.as_posix(), matcher.file):
+                    if matcher.action == 'TAKE_FROM_CONTENT':
+                        meta.title = md_file.get_title()
+                        cover_image = self._get_cover_image(relative_dir)
 
-                    if cover_image is not None:
-                        meta.image = str(cover_image.as_posix())
+                        if cover_image is not None:
+                            meta.image = str(cover_image.as_posix())
 
-                    meta.url = urljoin(self.config.base_href, f'{Path(self.file_name).stem}.html')
+                        meta.url = urljoin(self.config.base_href, f'{Path(self.file_name).stem}.html')
 
-                elif matcher.action == 'STATIC':
-                    if matcher.meta_fields.title is not None:
-                        meta.title = matcher.meta_fields.title
-                    if matcher.meta_fields.image is not None:
-                        meta.image = matcher.meta_fields.image
-                break
+                    elif matcher.action == 'STATIC':
+                        if matcher.meta_fields is not None and matcher.meta_fields.title is not None:
+                            meta.title = matcher.meta_fields.title
+                        if matcher.meta_fields is not None and matcher.meta_fields.image is not None:
+                            meta.image = matcher.meta_fields.image
+                    break
 
-        if meta.title is not None:
-            html_file.set_title(meta.title, self.config.hostname)
+            if meta.title is not None:
+                html_file.set_title(meta.title, self.config.hostname)
 
-        html_file.insert_og_meta(meta, self.config.base_href, self.last_edited_time)
+            html_file.insert_og_meta(meta, self.config.base_href, self.last_edited_time)
 
         destination_path = self.destination_dir / Path(f'{Path(self.file_name).stem}.html')
         html_file.write(destination_path)
@@ -69,7 +70,7 @@ class MarkdownFileProcessor:
 
     def _get_frame_for_file(self) -> Frame:
         """
-        Return the frame for a markdown file as a string.
+        Return the frame for a Markdown file as a string.
         """
         frame_path = None
         for f in self.config.frames:

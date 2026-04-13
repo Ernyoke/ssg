@@ -1,6 +1,5 @@
 import os
 import pprint
-from datetime import datetime, UTC
 from pathlib import Path
 
 import git.git
@@ -16,10 +15,10 @@ class SSG:
     ssg = SSG(config)
     ssg.run()
     """
-    frames_cache = dict()
 
     def __init__(self, config: Config):
         self.config = config
+        self.frames_cache = dict()
 
     def run(self) -> None:
         """

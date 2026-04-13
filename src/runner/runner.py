@@ -31,7 +31,7 @@ class SSG:
 
     def _traverse_directory(self) -> None:
         """
-        Traverse source directory. Transform markdown (.md) files into HTML files. Render this files into the source
+        Traverse source directory. Transform Markdown (.md) files into HTML files. Render this files into the source
         directory. Copy other non-excluded files into source_directory.
         :return: None
         """
@@ -40,8 +40,8 @@ class SSG:
         frames_to_exclude = set([frame.frame for frame in self.config.frames])
         print(f'Frames to exclude: {pprint.pformat(frames_to_exclude)}')
 
-        for current_directory, sub_directories, file_list in os.walk(self.config.source):
-            current_directory = Path(current_directory)
+        for dir_path, sub_directories, file_list in os.walk(self.config.source):
+            current_directory = Path(dir_path)
 
             # Filter excluded directories
             if current_directory.name in self.config.exclude:
@@ -57,8 +57,10 @@ class SSG:
             if not directory_to_create.exists():
                 directory_to_create.mkdir()
 
-            for file_name in filter(lambda name: name not in self.config.exclude, file_list) and filter(
-                    lambda name: current_directory / Path(name) not in frames_to_exclude, file_list):
+            for file_name in filter(
+                    lambda name: current_directory / Path(name) not in frames_to_exclude,
+                    filter(lambda name: name not in self.config.exclude, file_list)
+            ):
                 if file_name.endswith('.md'):
                     file_path = Path(current_directory / Path(file_name))
                     md_file_processor = MarkdownFileProcessor(path=file_path,
@@ -74,7 +76,7 @@ class SSG:
 
     def _traverse_and_get_last_edited_timestamps(self):
         """
-        Traverse source directory and get last edited timestamps for markdown (.md) files.
+        Traverse source directory and get last edited timestamps for Markdown (.md) files.
         """
         markdown_file_paths = set()
 

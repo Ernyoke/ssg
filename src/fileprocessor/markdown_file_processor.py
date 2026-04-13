@@ -3,7 +3,7 @@ import fnmatch
 import glob
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from urllib.parse import urljoin
 
 from config import Config
@@ -14,14 +14,14 @@ from fileprocessor.markdown_file import MarkDownFile
 
 class MarkdownFileProcessor:
     """
-    Used to transform markdown files into html files.
+    Used to transform Markdown files into HTML files.
     """
 
     def __init__(self, path: Path, file_name: str,
                  destination_dir: Path,
                  last_edited_time: Optional[datetime],
                  config: Config,
-                 frames_cache: [Frame]):
+                 frames_cache: dict[str, Frame]):
         self.file_name = file_name
         self.destination_dir = destination_dir
         self.last_edited_time = last_edited_time
@@ -31,7 +31,7 @@ class MarkdownFileProcessor:
 
     def render_html(self, relative_dir: Path):
         """
-        Open markdown file and render it as HTML file. Prepend a header to this HTML file and append a footer to it.
+        Open Markdown file and render it as HTML file. Prepend a header to this HTML file and append a footer to it.
         """
         frame = self._get_frame_for_file()
         md_file = MarkDownFile.read_from_file(self.path)

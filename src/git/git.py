@@ -20,7 +20,7 @@ class GitClient:
         resolved = path if path.is_absolute() else path.resolve()
         return resolved.relative_to(self.repo_root)
 
-    def get_last_edit_time_for_files(self, file_paths: set[Path]):
+    def get_last_edit_time_for_files(self, file_paths: set[Path]) -> dict[Path, datetime]:
         """
         Return the last-committed timestamp for each of the given file paths.
 

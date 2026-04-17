@@ -5,8 +5,6 @@ from urllib.parse import urlparse, urljoin
 import bs4
 from bs4 import BeautifulSoup, Tag
 
-from fileprocessor.html_file import HTMLFile
-
 
 class Frame:
     """
@@ -26,17 +24,17 @@ class Frame:
         with open(path, encoding='utf-8') as file:
             return Frame(file.read())
 
-    def embed_content(self, html_file: HTMLFile, content_element_id="main-content") -> BeautifulSoup:
+    def embed_content(self, soup: BeautifulSoup, content_element_id="main-content") -> BeautifulSoup:
         """
         Embed HTML content into the current frame.
-        :param html_file: HTML file.
+        :param soup: HTML content.
         :param content_element_id: ID of HTML element where the embedding should happen.
         """
         soup_copy = copy.deepcopy(self.soup)
         article = soup_copy.find('article', id=content_element_id)
         if isinstance(article, Tag):
             article.clear()
-            article.append(html_file.soup)
+            article.append(soup)
         return soup_copy
 
     def set_base_path(self, base_href: str):

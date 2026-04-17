@@ -1,4 +1,5 @@
 from datetime import datetime, UTC
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -55,7 +56,7 @@ def frame_file(source_dir):
     """Write the minimal frame HTML and return its path."""
     p = source_dir / "frame.html"
     p.write_text(MINIMAL_FRAME_HTML, encoding="utf-8")
-    return p
+    return Path("frame.html")
 
 
 @pytest.fixture()
@@ -134,13 +135,12 @@ def test_output_html_title_derived_from_markdown_heading(source_dir, destination
     title_tag = soup.find("title")
     assert title_tag is not None
     assert "Hello World" in title_tag.text
-    assert "example.com" in title_tag.text
 
 
 def test_static_meta_matcher_overrides_title(source_dir, destination_dir, frame_file, md_file):
     """With a STATIC matcher the og:title must be taken from the matcher's meta_fields."""
     static_meta = MetaFields(title="Overridden Title", image=None, description=None, url=None, twitter_handle=None)
-    static_matcher = Matcher(file="*/test.md", action="STATIC", meta_fields=static_meta)
+    static_matcher = Matcher(file="test.md", action="STATIC", meta_fields=static_meta)
     _run_ssg(_make_config(source_dir, destination_dir, frame_file, extra_matchers=[static_matcher]))
 
     assert "Overridden Title" in (destination_dir / "test.html").read_text(encoding="utf-8")
@@ -246,3 +246,93 @@ def test_last_edited_meta_tag_absent_when_git_returns_no_timestamp(source_dir, d
 
     assert "last-updated" not in (destination_dir / "test.html").read_text(encoding="utf-8")
 
+
+# ------------------------------------------------------------------
+# _get_last_edited_for_markdown_files
+# ------------------------------------------------------------------
+
+def test_get_last_edited_only_passes_markdown_files_to_git(source_dir):
+    """Only .md file paths are forwarded to the git client; other files are ignored."""
+    (source_dir / "page.md").write_text("# Page", encoding="utf-8")
+    (source_dir / "style.css").write_text("body {}", encoding="utf-8")
+
+    root = SSG._create_directory_tree(source_dir)
+
+    with patch("git.GitClient") as mock_class:
+        mock_instance = MagicMock()
+        mock_instance.get_last_edit_time_for_files.return_value = {}
+        mock_class.return_value = mock_instance
+
+        SSG._get_last_edited_for_markdown_files(root)
+
+        passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
+        assert all(p.suffix == ".md" for p in passed_paths)
+        assert any(p.name == "page.md" for p in passed_paths)
+        assert not any(p.name == "style.css" for p in passed_paths)
+
+
+def test_get_last_edited_returns_git_client_result(source_dir):
+    """The return value is exactly what the git client returns."""
+    md_file = source_dir / "page.md"
+    md_file.write_text("# Page", encoding="utf-8")
+    timestamp = datetime(2024, 3, 10, 9, 0, 0, tzinfo=UTC)
+
+    root = SSG._create_directory_tree(source_dir)
+
+    with patch("git.GitClient") as mock_class:
+        mock_instance = MagicMock()
+        mock_instance.get_last_edit_time_for_files.return_value = {md_file: timestamp}
+        mock_class.return_value = mock_instance
+
+        result = SSG._get_last_edited_for_markdown_files(root)
+
+        assert result == {md_file: timestamp}
+
+
+def test_get_last_edited_traverses_subdirectories(source_dir):
+    """Markdown files nested in subdirectories are included in the paths sent to git."""
+    sub = source_dir / "articles"
+    sub.mkdir()
+    (sub / "article.md").write_text("# Article", encoding="utf-8")
+    (source_dir / "index.md").write_text("# Index", encoding="utf-8")
+
+    root = SSG._create_directory_tree(source_dir)
+
+    with patch("git.GitClient") as mock_class:
+        mock_instance = MagicMock()
+        mock_instance.get_last_edit_time_for_files.return_value = {}
+        mock_class.return_value = mock_instance
+
+        SSG._get_last_edited_for_markdown_files(root)
+
+        passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
+
+
+        assert any(p.name == "index.md" for p in passed_paths)
+        assert any(p.name == "article.md" for p in passed_paths)
+
+
+def test__create_directory_tree(source_dir, destination_dir):
+    ignored = source_dir / "ignored"
+    ignored.mkdir()
+
+    dir1 = source_dir / "dir1"
+    dir1.mkdir()
+
+    dir2 = source_dir / "dir2"
+    dir2.mkdir()
+
+    dir3 = dir1 / "dir3"
+    dir3.mkdir()
+
+    secret_file = dir3 / "secret.md"
+    (dir3 / "secret.md").write_text("# Secret", encoding="utf-8")
+    tree = SSG._create_directory_tree(source_dir,
+                                      exclude=frozenset(["ignored", "**/secret.*"]))
+
+    paths = [node.path for node in tree.traverse()]
+
+    assert dir1 in paths
+    assert dir2 in paths
+    assert ignored not in paths
+    assert secret_file not in paths

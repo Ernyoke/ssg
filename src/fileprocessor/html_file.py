@@ -7,16 +7,31 @@ from bs4 import BeautifulSoup, Tag
 from lxml import html, etree
 from slugify import slugify
 
-from config import MetaFields
+from content.article import Article
+from fileprocessor.frame import Frame
 
 
 class HTMLFile:
-    """
-    Used to process an HTML document.
-    """
+    @staticmethod
+    def from_article(article: Article, frame: Frame, base_href: str) -> 'HTMLFile':
+        soup = BeautifulSoup(article.markdown.convert_to_html(), 'lxml')
+        html_file = HTMLFile(frame.embed_content(soup))
+        html_file._replace_md_with_html()
+        html_file.set_title(article.title)
+        html_file.add_target_blank_to_external_urls(base_href)
+        html_file.add_anchor_links()
+        html_file.insert_og_meta(title=article.title,
+                                 description=None,
+                                 url=article.url,
+                                 cover_image=article.cover_image.as_posix() if article.cover_image else None,
+                                 twitter_handle='',
+                                 base_href=base_href,
+                                 last_edited_time=article.last_edited)
 
-    def __init__(self, content: BeautifulSoup):
-        self.soup = content
+        return html_file
+
+    def __init__(self, soup: BeautifulSoup):
+        self.soup = soup
         self._replace_md_with_html()
 
     def _replace_md_with_html(self):
@@ -54,15 +69,15 @@ class HTMLFile:
                 title.append(anchor_tag)
 
     def insert_og_meta(self,
-                       meta: MetaFields,
+                       title: str|None,
+                       description: str|None,
+                       url: str|None,
+                       cover_image: str|None,
+                       twitter_handle: str | None,
                        base_href: str,
                        last_edited_time: Optional[datetime]):
         """
         Add og:meta fields to the header of an HTML page.
-        :param meta: meta fields
-        :param base_href: base url
-        :param last_edited_time: optional datetime when the file was last edited. In case this value is null, the "last-updated" meta won't be added to the page
-        :return: updated HTML page as a string
         """
         head = self.soup.find('head')
         if head is None or not isinstance(head, Tag):
@@ -71,56 +86,56 @@ class HTMLFile:
 
         meta_title = self.soup.new_tag('meta', attrs={
             'property': 'og:title',
-            'content': meta.title or ''
+            'content': title or ''
         })
         head.append(meta_title)
 
         meta_description = self.soup.new_tag('meta', attrs={
             'property': 'og:description',
-            'content': meta.description or ''
+            'content': description or ''
         })
         head.append(meta_description)
 
         meta_url = self.soup.new_tag('meta', attrs={
             'property': 'og:url',
-            'content': meta.url or ''
+            'content': url or ''
         })
         head.append(meta_url)
 
         meta_image = self.soup.new_tag('meta', attrs={
             'property': 'og:image',
-            'content': urljoin(base_href, meta.image)
+            'content': urljoin(base_href, cover_image)
         })
         head.append(meta_image)
 
         # Twitter specific meta tags
         twitter_meta_title = self.soup.new_tag('meta', attrs={
             'property': 'twitter:title',
-            'content': meta.title or ''
+            'content': title or ''
         })
         head.append(twitter_meta_title)
 
         twitter_meta_description = self.soup.new_tag('meta', attrs={
             'property': 'twitter:description',
-            'content': meta.description or ''
+            'content': description or ''
         })
         head.append(twitter_meta_description)
 
         twitter_meta_site = self.soup.new_tag('meta', attrs={
             'property': 'twitter:site',
-            'content': meta.twitter_handle or ''
+            'content': twitter_handle or ''
         })
         head.append(twitter_meta_site)
 
         twitter_meta_creator = self.soup.new_tag('meta', attrs={
             'property': 'twitter:creator',
-            'content': meta.twitter_handle or ''
+            'content': twitter_handle or ''
         })
         head.append(twitter_meta_creator)
 
         twitter_meta_image = self.soup.new_tag('meta', attrs={
             'property': 'twitter:image',
-            'content': urljoin(base_href, meta.image)
+            'content': urljoin(base_href, cover_image)
         })
         head.append(twitter_meta_image)
 

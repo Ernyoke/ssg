@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from ssg.runner import runner
 from ssg.config import read_config
+from ssg.engine.engine import Engine
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
     parser.add_argument("config", help="Path of the config.json file", type=Path)
     args = parser.parse_args()
     config = read_config(args.config)
-    ssg_engine = runner.Engine()
+    ssg_engine = Engine()
     ssg_engine.run(config)
 
 

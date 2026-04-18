@@ -6,7 +6,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 from ssg.config.config import Config, Meta, MetaFields, Matcher, Frame as ConfigFrame
-from ssg.runner.runner import Engine
+from ssg.engine.engine import Engine
 
 MINIMAL_FRAME_HTML = """\
 <!DOCTYPE html>
@@ -93,7 +93,7 @@ def _make_config(source_dir, destination_dir, frame_path, extra_matchers=None, e
 
 def _run_ssg(config, git_timestamps=None):
     """Run SSG with the git client mocked out."""
-    with patch("ssg.runner.runner.git.GitClient") as mock_class:
+    with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = git_timestamps or {}
         mock_class.return_value = mock_instance
@@ -258,7 +258,7 @@ def test_get_last_edited_only_passes_markdown_files_to_git(source_dir):
 
     root = Engine._create_directory_tree(source_dir)
 
-    with patch("ssg.runner.runner.git.GitClient") as mock_class:
+    with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
@@ -279,7 +279,7 @@ def test_get_last_edited_returns_git_client_result(source_dir):
 
     root = Engine._create_directory_tree(source_dir)
 
-    with patch("ssg.runner.runner.git.GitClient") as mock_class:
+    with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {md_file: timestamp}
         mock_class.return_value = mock_instance
@@ -298,7 +298,7 @@ def test_get_last_edited_traverses_subdirectories(source_dir):
 
     root = Engine._create_directory_tree(source_dir)
 
-    with patch("ssg.runner.runner.git.GitClient") as mock_class:
+    with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance

@@ -5,15 +5,25 @@ ssg - *Static Site Generator* used to generate my static site: [https://ervinszi
 ## Install
 
 ```bash
-uvx tool install git@github.com:Ernyoke/ssg.git
+uv tool install git+https://github.com/Ernyoke/ssg.git
 ```
 
 ## Usage
 
 ```bash
-usage: ssg [-h] source destination base_path
+usage: ssg [-h] config
 
 positional arguments:
+  config      Path of the config.json file
+
+options:
+  -h, --help  show this help message and exit
+```
+
+Example:
+
+```bash
+ssg ./config.json
 ```
 
 `config.json` content:
@@ -82,7 +92,7 @@ uv build
 ### Installing from local whl
 
 ```bash
-uv install
+uv tool install dist/ssg-*.whl
 ```
 
 ### Running tests

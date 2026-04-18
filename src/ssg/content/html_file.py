@@ -16,7 +16,6 @@ class HTMLFile:
     def from_article(article: Article, frame: Frame, base_href: str) -> 'HTMLFile':
         soup = BeautifulSoup(article.markdown.convert_to_html(), 'lxml')
         html_file = HTMLFile(frame.embed_content(soup))
-        html_file._replace_md_with_html()
         html_file.set_title(article.title)
         html_file.add_target_blank_to_external_urls(base_href)
         html_file.add_anchor_links()

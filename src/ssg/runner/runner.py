@@ -1,6 +1,7 @@
 import fnmatch
 import glob
 import os
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -14,6 +15,15 @@ from ssg.dirtree.node import NodeType
 from ssg.content.frame import Frame
 from ssg.content.html_file import HTMLFile
 from ssg.content.markdown_file import MarkDownFile
+
+
+@dataclass(frozen=True)
+class ResolvedMeta:
+    """Resolved per-article metadata produced by ``Engine._get_meta``."""
+    title: str | None = None
+    cover_image: Path | None = None
+    url: str | None = None
+    twitter_handle: str | None = None
 
 
 class Engine:
@@ -38,30 +48,21 @@ class Engine:
 
         last_edited = Engine._get_last_edited_for_markdown_files(root, config.source)
 
-        def mkdir(directory: DirectoryNode):
-            relative_path = directory.path
-            absolute_path = config.destination / relative_path
-            absolute_path.mkdir(parents=True, exist_ok=True)
-
-            if not absolute_path.is_dir():
-                print(
-                    f"Warning: Directory ${absolute_path.as_posix()} could not be created, because there is already a file having the same path!")
-
-        root.traverse_and_apply_to_each_dir(mkdir)
+        root.mk_dir_tree(config.destination)
 
         frames_to_exclude = set(frame.frame for frame in config.frames)
 
         for file in root.traverse(NodeType.FILE):
             if file.is_markdown():
-                title, cover_image, url, twitter_handle = Engine._get_meta(file, config.meta, config.base_href, config.source)
+                resolved = Engine._get_meta(file, config.meta, config.base_href, config.source)
                 markdown = MarkDownFile.read_from_file(config.source / file.path)
                 article = Article(
                     markdown_file=markdown,
-                    title=title if title is not None else markdown.get_title(),
-                    cover_image=cover_image,
-                    url=url,
+                    title=resolved.title if resolved.title is not None else markdown.get_title(),
+                    cover_image=resolved.cover_image,
+                    url=resolved.url,
                     last_edited=last_edited.get(config.source / file.path),
-                    twitter_handle=twitter_handle
+                    twitter_handle=resolved.twitter_handle
                 )
                 frame = self._get_frame(file, config)
                 html_file = HTMLFile.from_article(article, frame, base_href=config.base_href)
@@ -124,29 +125,52 @@ class Engine:
         return git_client.get_last_edit_time_for_files(markdown_file_paths)
 
     @staticmethod
-    def _get_meta(file: FileNode, meta: Meta|None, base_href: str, source: Path) -> tuple[str|None, Path|None, str|None, str|None]:
-        title, cover_image, url = None, None, None
-        if meta:
-            twitter_handle = meta.default.twitter_handle
-            for matcher in meta.matchers:
-                if fnmatch.fnmatch(file.path.as_posix(), matcher.file):
-                    if matcher.action == 'TAKE_FROM_CONTENT':
-                        cover_image = Engine._get_cover_image(file, source)
-                        url = urljoin(base_href, f'{file.name}.html')
-                        return title, cover_image, url, twitter_handle
+    def _get_meta(file: FileNode, meta: Meta|None, base_href: str, source: Path) -> ResolvedMeta:
+        if meta is None:
+            return ResolvedMeta()
 
-                    elif matcher.action == 'STATIC':
-                        if matcher.meta_fields is not None and matcher.meta_fields.title is not None:
-                            title = matcher.meta_fields.title
-                        if matcher.meta_fields is not None and matcher.meta_fields.image is not None:
-                            cover_image = Path(matcher.meta_fields.image)
-                        return title, cover_image, meta.default.url, twitter_handle
+        twitter_handle = meta.default.twitter_handle
+        for matcher in meta.matchers:
+            if not fnmatch.fnmatch(file.path.as_posix(), matcher.file):
+                continue
 
-                    elif matcher.action == 'USE_DEFAULT':
-                        image = Path(meta.default.image) if meta.default.image is not None else None
-                        return meta.default.url, image, meta.default.title, meta.default.twitter_handle
-            return None, None, None, twitter_handle
-        return None, None, None, None
+            if matcher.action == 'TAKE_FROM_CONTENT':
+                return ResolvedMeta(
+                    cover_image=Engine._get_cover_image(file, source),
+                    url=urljoin(base_href, f'{file.name}.html'),
+                    twitter_handle=twitter_handle,
+                )
+
+            if matcher.action == 'STATIC':
+                title: str | None = None
+                cover_image: Path | None = None
+                url = meta.default.url
+                if matcher.meta_fields is not None:
+                    if matcher.meta_fields.title is not None:
+                        title = matcher.meta_fields.title
+                    if matcher.meta_fields.image is not None:
+                        cover_image = Path(matcher.meta_fields.image)
+                    if matcher.meta_fields.url is not None:
+                        url = matcher.meta_fields.url
+                    if matcher.meta_fields.twitter_handle is not None:
+                        twitter_handle = matcher.meta_fields.twitter_handle
+                return ResolvedMeta(
+                    title=title,
+                    cover_image=cover_image,
+                    url=url,
+                    twitter_handle=twitter_handle,
+                )
+
+            if matcher.action == 'USE_DEFAULT':
+                image = Path(meta.default.image) if meta.default.image is not None else None
+                return ResolvedMeta(
+                    title=meta.default.title,
+                    cover_image=image,
+                    url=meta.default.url,
+                    twitter_handle=meta.default.twitter_handle,
+                )
+
+        return ResolvedMeta(twitter_handle=twitter_handle)
 
     @staticmethod
     def _get_cover_image(file: FileNode, source: Path) -> Optional[Path]:

@@ -45,26 +45,14 @@ class DirectoryNode(Node):
 
         yield from dfs(self)
 
-    def traverse_and_filter_files(self, predicate: Callable[['FileNode'], bool]):
-        content = []
+    def mk_dir_tree(self, destination: Path):
+        for directory in self.traverse(NodeType.DIR):
+            relative_path = directory.path
+            absolute_path = destination / relative_path
+            absolute_path.mkdir(parents=True, exist_ok=True)
 
-        def dfs(current_node):
-            if current_node is not None:
-                for file in current_node.files:
-                    if predicate(file):
-                        content.append(file)
-                for directory in current_node.directories:
-                    dfs(directory)
+            if not absolute_path.is_dir():
+                print(
+                    f"Warning: Directory ${absolute_path.as_posix()} could not be created, because there is already a file having the same path!")
 
-        dfs(self)
-        return content
-
-    def traverse_and_apply_to_each_dir(self, function: Callable[['DirectoryNode'], None]):
-        def dfs(current_node):
-            if current_node is not None:
-                for directory in current_node.directories:
-                    function(directory)
-                    dfs(directory)
-
-        dfs(self)
 

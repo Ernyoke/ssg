@@ -5,7 +5,7 @@ ssg - *Static Site Generator* used to generate my static site: [https://ervinszi
 ## Install
 
 ```bash
-uvx git+https://github.com/thisdavej/wordlookup-tutorial.git
+uvx tool install git@github.com:Ernyoke/ssg.git
 ```
 
 ## Usage

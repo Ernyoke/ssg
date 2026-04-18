@@ -21,8 +21,7 @@ dependencies = [
     "Markdown >= 3.9",
     "python-slugify >= 8.0.4",
     "pygit2 >= 1.18.2",
-    "pymdown-extensions >= 10.16.1",
-    "pytest>=9.0.3",
+    "pymdown-extensions >= 10.16.1"
 ]
 
 [dependency-groups]

@@ -20,13 +20,15 @@ class HTMLFile:
         html_file.set_title(article.title)
         html_file.add_target_blank_to_external_urls(base_href)
         html_file.add_anchor_links()
-        html_file.insert_og_meta(title=article.title,
-                                 description=None,
+
+        cover_image = article.get_cover_image()
+        html_file.insert_og_meta(title=article.get_title(),
+                                 description=article.get_description(),
                                  url=article.url,
-                                 cover_image=article.cover_image.as_posix() if article.cover_image else None,
-                                 twitter_handle='',
+                                 cover_image=cover_image.as_posix() if cover_image else None,
+                                 twitter_handle=article.get_twitter_handle(),
                                  base_href=base_href,
-                                 last_edited_time=article.last_edited)
+                                 last_edited_time=article.get_last_edited())
 
         return html_file
 
@@ -104,7 +106,7 @@ class HTMLFile:
 
         meta_image = self.soup.new_tag('meta', attrs={
             'property': 'og:image',
-            'content': urljoin(base_href, cover_image)
+            'content': urljoin(base_href, cover_image) if cover_image else ''
         })
         head.append(meta_image)
 
@@ -135,7 +137,7 @@ class HTMLFile:
 
         twitter_meta_image = self.soup.new_tag('meta', attrs={
             'property': 'twitter:image',
-            'content': urljoin(base_href, cover_image)
+            'content': urljoin(base_href, cover_image) if cover_image else ''
         })
         head.append(twitter_meta_image)
 

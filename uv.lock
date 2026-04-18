@@ -310,7 +310,6 @@ dependencies = [
     { name = "markdown" },
     { name = "pygit2" },
     { name = "pymdown-extensions" },
-    { name = "pytest" },
     { name = "python-slugify" },
 ]
 
@@ -326,7 +325,6 @@ requires-dist = [
     { name = "markdown", specifier = ">=3.9" },
     { name = "pygit2", specifier = ">=1.18.2" },
     { name = "pymdown-extensions", specifier = ">=10.16.1" },
-    { name = "pytest", specifier = ">=9.0.3" },
     { name = "python-slugify", specifier = ">=8.0.4" },
 ]
 

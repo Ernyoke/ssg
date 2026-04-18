@@ -39,9 +39,9 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture()
 def source_dir(tmp_path):
-    d = tmp_path / "source"
-    d.mkdir()
-    return d
+    s = tmp_path / "source"
+    s.mkdir()
+    return s
 
 
 @pytest.fixture()
@@ -64,7 +64,7 @@ def md_file(source_dir):
     """Write the sample Markdown file and return its path."""
     p = source_dir / "test.md"
     p.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
-    return p
+    return Path("test.md")
 
 
 def _make_config(source_dir, destination_dir, frame_path, extra_matchers=None, exclude=None):
@@ -97,7 +97,7 @@ def _run_ssg(config, git_timestamps=None):
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = git_timestamps or {}
         mock_class.return_value = mock_instance
-        SSG(config).run()
+        SSG().run(config)
 
 
 # ------------------------------------------------------------------
@@ -233,7 +233,7 @@ def test_multiple_markdown_files_all_rendered(source_dir, destination_dir, frame
 def test_last_edited_meta_tag_present_when_git_returns_timestamp(source_dir, destination_dir, frame_file, md_file):
     """When the git client returns a timestamp, a 'last-updated' meta tag must appear in the output."""
     timestamp = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
-    _run_ssg(_make_config(source_dir, destination_dir, frame_file), git_timestamps={md_file: timestamp})
+    _run_ssg(_make_config(source_dir, destination_dir, frame_file), git_timestamps={source_dir / md_file: timestamp})
 
     content = (destination_dir / "test.html").read_text(encoding="utf-8")
     assert "last-updated" in content
@@ -263,7 +263,7 @@ def test_get_last_edited_only_passes_markdown_files_to_git(source_dir):
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
 
-        SSG._get_last_edited_for_markdown_files(root)
+        SSG._get_last_edited_for_markdown_files(root, source_dir)
 
         passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
         assert all(p.suffix == ".md" for p in passed_paths)
@@ -284,7 +284,7 @@ def test_get_last_edited_returns_git_client_result(source_dir):
         mock_instance.get_last_edit_time_for_files.return_value = {md_file: timestamp}
         mock_class.return_value = mock_instance
 
-        result = SSG._get_last_edited_for_markdown_files(root)
+        result = SSG._get_last_edited_for_markdown_files(root, source_dir)
 
         assert result == {md_file: timestamp}
 
@@ -303,7 +303,7 @@ def test_get_last_edited_traverses_subdirectories(source_dir):
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
 
-        SSG._get_last_edited_for_markdown_files(root)
+        SSG._get_last_edited_for_markdown_files(root, source_dir)
 
         passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
 
@@ -313,26 +313,31 @@ def test_get_last_edited_traverses_subdirectories(source_dir):
 
 
 def test__create_directory_tree(source_dir, destination_dir):
-    ignored = source_dir / "ignored"
+    ignored_dir_name = 'ignored'
+    ignored = source_dir / ignored_dir_name
     ignored.mkdir()
 
-    dir1 = source_dir / "dir1"
+    dir1_name = 'dir1'
+    dir1 = source_dir / dir1_name
     dir1.mkdir()
 
-    dir2 = source_dir / "dir2"
+    dir2_name = 'dir2'
+    dir2 = source_dir / dir2_name
     dir2.mkdir()
 
-    dir3 = dir1 / "dir3"
+    dir3_name = 'dir3'
+    dir3 = dir1 / dir3_name
     dir3.mkdir()
 
-    secret_file = dir3 / "secret.md"
-    (dir3 / "secret.md").write_text("# Secret", encoding="utf-8")
+    secret_md = 'secret.md'
+    secret_file = dir3 / secret_md
+    secret_file.write_text("# Secret", encoding="utf-8")
     tree = SSG._create_directory_tree(source_dir,
                                       exclude=frozenset(["ignored", "**/secret.*"]))
 
-    paths = [node.path for node in tree.traverse()]
+    paths = [destination_dir/node.path for node in tree.traverse()]
 
-    assert dir1 in paths
-    assert dir2 in paths
-    assert ignored not in paths
-    assert secret_file not in paths
+    assert destination_dir/dir1_name in paths
+    assert destination_dir/dir2_name in paths
+    assert destination_dir/dir3/secret_md not in paths
+    assert destination_dir/ignored_dir_name not in paths

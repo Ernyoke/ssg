@@ -5,7 +5,6 @@ from unittest import TestCase
 
 from bs4 import BeautifulSoup
 
-from config.config import MetaFields
 from fileprocessor.html_file import HTMLFile
 
 BASE_HTML = """\
@@ -152,76 +151,81 @@ class TestAddAnchorLinks(TestCase):
 
 
 class TestInsertOgMeta(TestCase):
-    def _make_meta(self, **kwargs) -> MetaFields:
-        defaults = dict(
+    BASE_HREF = 'https://example.com/'
+
+    def _insert(self, hf: HTMLFile, **overrides):
+        """Call insert_og_meta with sensible defaults, allowing per-test overrides."""
+        kwargs = dict(
             title='My Title',
-            image='images/cover.png',
             description='My description',
             url='https://example.com/page',
-            twitter_handle='@myhandle'
+            cover_image='images/cover.png',
+            twitter_handle='@myhandle',
+            base_href=self.BASE_HREF,
+            last_edited_time=None,
         )
-        defaults.update(kwargs)
-        return MetaFields(**defaults)
+        kwargs.update(overrides)
+        hf.insert_og_meta(**kwargs)
 
     def test_og_title_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'og:title'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'My Title')
 
     def test_og_description_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'og:description'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'My description')
 
     def test_og_url_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'og:url'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'https://example.com/page')
 
     def test_og_image_inserted_with_base_href(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(image='images/cover.png'), 'https://example.com/', None)
+        self._insert(hf, cover_image='images/cover.png')
         tag = hf.soup.find('meta', attrs={'property': 'og:image'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'https://example.com/images/cover.png')
 
     def test_twitter_title_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'twitter:title'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'My Title')
 
     def test_twitter_description_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'twitter:description'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'My description')
 
     def test_twitter_site_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'twitter:site'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], '@myhandle')
 
     def test_twitter_creator_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'twitter:creator'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], '@myhandle')
 
     def test_twitter_card_inserted(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf)
         tag = hf.soup.find('meta', attrs={'property': 'twitter:card'})
         self.assertIsNotNone(tag)
         self.assertEqual(tag['content'], 'summary_large_image')
@@ -229,26 +233,26 @@ class TestInsertOgMeta(TestCase):
     def test_last_updated_inserted_when_datetime_provided(self):
         hf = _make_html_file()
         dt = datetime(2025, 3, 10, 9, 30, 0, tzinfo=UTC)
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', dt)
+        self._insert(hf, last_edited_time=dt)
         tag = hf.soup.find('meta', attrs={'name': 'last-updated'})
         self.assertIsNotNone(tag)
         self.assertIn('2025-03-10', tag['content'])
 
     def test_last_updated_not_inserted_when_datetime_is_none(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(), 'https://example.com/', None)
+        self._insert(hf, last_edited_time=None)
         tag = hf.soup.find('meta', attrs={'name': 'last-updated'})
         self.assertIsNone(tag)
 
     def test_none_title_defaults_to_empty_string(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(title=None), 'https://example.com/', None)
+        self._insert(hf, title=None)
         tag = hf.soup.find('meta', attrs={'property': 'og:title'})
         self.assertEqual(tag['content'], '')
 
     def test_none_description_defaults_to_empty_string(self):
         hf = _make_html_file()
-        hf.insert_og_meta(self._make_meta(description=None), 'https://example.com/', None)
+        self._insert(hf, description=None)
         tag = hf.soup.find('meta', attrs={'property': 'og:description'})
         self.assertEqual(tag['content'], '')
 

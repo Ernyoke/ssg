@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from fileprocessor.markdown_file import MarkDownFile
+from ssg.content.markdown_file import MarkDownFile
 
 
 class Article:

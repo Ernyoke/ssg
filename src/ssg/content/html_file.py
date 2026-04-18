@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup, Tag
 from lxml import html, etree
 from slugify import slugify
 
-from content.article import Article
-from fileprocessor.frame import Frame
+from ssg.content.article import Article
+from ssg.content.frame import Frame
 
 
 class HTMLFile:

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from fileprocessor.markdown_file import MarkDownFile
+from ssg.content.markdown_file import MarkDownFile
 
 
 class TestMarkDownFile(TestCase):

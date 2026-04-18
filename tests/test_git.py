@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pygit2
 
-from git.git import GitClient
+from ssg.git import GitClient
 
 
 class TestGitClient(TestCase):

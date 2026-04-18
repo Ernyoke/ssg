@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from bs4 import BeautifulSoup
 
-from config.config import Config, Meta, MetaFields, Matcher, Frame as ConfigFrame
-from runner.runner import SSG
+from ssg.config.config import Config, Meta, MetaFields, Matcher, Frame as ConfigFrame
+from ssg.runner.runner import Engine
 
 MINIMAL_FRAME_HTML = """\
 <!DOCTYPE html>
@@ -97,7 +97,7 @@ def _run_ssg(config, git_timestamps=None):
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = git_timestamps or {}
         mock_class.return_value = mock_instance
-        SSG().run(config)
+        Engine().run(config)
 
 
 # ------------------------------------------------------------------
@@ -256,14 +256,14 @@ def test_get_last_edited_only_passes_markdown_files_to_git(source_dir):
     (source_dir / "page.md").write_text("# Page", encoding="utf-8")
     (source_dir / "style.css").write_text("body {}", encoding="utf-8")
 
-    root = SSG._create_directory_tree(source_dir)
+    root = Engine._create_directory_tree(source_dir)
 
     with patch("git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
 
-        SSG._get_last_edited_for_markdown_files(root, source_dir)
+        Engine._get_last_edited_for_markdown_files(root, source_dir)
 
         passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
         assert all(p.suffix == ".md" for p in passed_paths)
@@ -277,14 +277,14 @@ def test_get_last_edited_returns_git_client_result(source_dir):
     md_file.write_text("# Page", encoding="utf-8")
     timestamp = datetime(2024, 3, 10, 9, 0, 0, tzinfo=UTC)
 
-    root = SSG._create_directory_tree(source_dir)
+    root = Engine._create_directory_tree(source_dir)
 
     with patch("git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {md_file: timestamp}
         mock_class.return_value = mock_instance
 
-        result = SSG._get_last_edited_for_markdown_files(root, source_dir)
+        result = Engine._get_last_edited_for_markdown_files(root, source_dir)
 
         assert result == {md_file: timestamp}
 
@@ -296,14 +296,14 @@ def test_get_last_edited_traverses_subdirectories(source_dir):
     (sub / "article.md").write_text("# Article", encoding="utf-8")
     (source_dir / "index.md").write_text("# Index", encoding="utf-8")
 
-    root = SSG._create_directory_tree(source_dir)
+    root = Engine._create_directory_tree(source_dir)
 
     with patch("git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
 
-        SSG._get_last_edited_for_markdown_files(root, source_dir)
+        Engine._get_last_edited_for_markdown_files(root, source_dir)
 
         passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
 
@@ -332,8 +332,8 @@ def test__create_directory_tree(source_dir, destination_dir):
     secret_md = 'secret.md'
     secret_file = dir3 / secret_md
     secret_file.write_text("# Secret", encoding="utf-8")
-    tree = SSG._create_directory_tree(source_dir,
-                                      exclude=frozenset(["ignored", "**/secret.*"]))
+    tree = Engine._create_directory_tree(source_dir,
+                                         exclude=frozenset(["ignored", "**/secret.*"]))
 
     paths = [destination_dir/node.path for node in tree.traverse()]
 

@@ -6,23 +6,23 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
 
-import git.git
-from config import Config, Meta
-from content.article import Article
-from dirtree.directory_node import DirectoryNode, FileNode
-from dirtree.node import NodeType
-from fileprocessor.frame import Frame
-from fileprocessor.html_file import HTMLFile
-from fileprocessor.markdown_file import MarkDownFile
+from ssg.git import git
+from ssg.config import Config, Meta
+from ssg.content.article import Article
+from ssg.dirtree.directory_node import DirectoryNode, FileNode
+from ssg.dirtree.node import NodeType
+from ssg.content.frame import Frame
+from ssg.content.html_file import HTMLFile
+from ssg.content.markdown_file import MarkDownFile
 
 
-class SSG:
+class Engine:
     """
-    SSG (Static Site Generate) runner class.
+    SSG (Static Site Generate) engine class.
 
     Usage:
-    ssg = SSG()
-    ssg.run(config)
+    engine = Engine()
+    engine.run(config)
     """
 
     def __init__(self):
@@ -34,9 +34,9 @@ class SSG:
         into HTML.
         :return: None
         """
-        root = SSG._create_directory_tree(config.source, frozenset(config.exclude))
+        root = Engine._create_directory_tree(config.source, frozenset(config.exclude))
 
-        last_edited = SSG._get_last_edited_for_markdown_files(root, config.source)
+        last_edited = Engine._get_last_edited_for_markdown_files(root, config.source)
 
         def mkdir(directory: DirectoryNode):
             relative_path = directory.path
@@ -53,7 +53,7 @@ class SSG:
 
         for file in root.traverse(NodeType.FILE):
             if file.is_markdown():
-                title, cover_image, url, twitter_handle = SSG._get_meta(file, config.meta, config.base_href, config.source)
+                title, cover_image, url, twitter_handle = Engine._get_meta(file, config.meta, config.base_href, config.source)
                 markdown = MarkDownFile.read_from_file(config.source / file.path)
                 article = Article(
                     markdown_file=markdown,
@@ -70,13 +70,13 @@ class SSG:
                 print(f'Created {destination_path.as_posix()}')
             else:
                 if file.path not in frames_to_exclude:
-                    SSG._copy_file(config.source / file.path, config.destination / file.path)
+                    Engine._copy_file(config.source / file.path, config.destination / file.path)
                     print(f'Copied {(config.destination / file.path).as_posix()}')
 
     @staticmethod
     def _create_directory_tree(path: Path,
                                exclude: frozenset[str] = frozenset()) -> DirectoryNode:
-        root = DirectoryNode(Path('.'))
+        root = DirectoryNode(Path(''))
         dir_nodes = {path: root}
         for current_dir_path, sub_directories, file_names in os.walk(path):
             # Exclude directories whose name or relative path matches any pattern
@@ -131,7 +131,7 @@ class SSG:
             for matcher in meta.matchers:
                 if fnmatch.fnmatch(file.path.as_posix(), matcher.file):
                     if matcher.action == 'TAKE_FROM_CONTENT':
-                        cover_image = SSG._get_cover_image(file, source)
+                        cover_image = Engine._get_cover_image(file, source)
                         url = urljoin(base_href, f'{file.name}.html')
                         return title, cover_image, url, twitter_handle
 

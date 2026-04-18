@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Callable, TypeVar, overload, Literal, Iterator
 
-from dirtree.file_node import FileNode
-from dirtree.node import Node, NodeType
+from ssg.dirtree.file_node import FileNode
+from ssg.dirtree.node import Node, NodeType
 
 T = TypeVar('T', bound=NodeType)
 

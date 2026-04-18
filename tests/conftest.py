@@ -4,7 +4,7 @@ Shared pytest fixtures available to all test modules.
 import pytest
 from bs4 import BeautifulSoup
 
-from config.config import MetaFields
+from ssg.config.config import MetaFields
 
 BASE_HTML = """\
 <!DOCTYPE html>

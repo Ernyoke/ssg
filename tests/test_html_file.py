@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from bs4 import BeautifulSoup
 
-from fileprocessor.html_file import HTMLFile
+from ssg.content.html_file import HTMLFile
 
 BASE_HTML = """\
 <!DOCTYPE html>

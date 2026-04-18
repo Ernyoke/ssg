@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dirtree.node import Node
+from ssg.dirtree.node import Node
 
 
 class FileNode(Node):

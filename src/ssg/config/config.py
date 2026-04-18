@@ -8,7 +8,6 @@ from typing import Optional, List, Literal
 
 @dataclass
 class MetaFields:
-    """Meta fields"""
     title: Optional[str]
     image: Optional[str]
     description: Optional[str]
@@ -26,9 +25,8 @@ class Matcher:
 
 @dataclass
 class Meta:
-    """Meta class"""
     default: MetaFields
-    matchers: [Matcher]
+    matchers: list[Matcher]
 
 
 @dataclass
@@ -46,7 +44,7 @@ class Config:
     destination: Path
     base_href: str
     hostname: str
-    exclude: [str]
+    exclude: list[str]
     meta: Optional[Meta]
     frames: List[Frame]
 
@@ -57,7 +55,7 @@ class Config:
         :param json_config: config.json content as a dictionary
         :return: Config object
         """
-        required_fields = ['source', 'destination', 'baseHref']
+        required_fields = ['source', 'destination', 'baseHref', 'hostname']
         if not all(map(lambda field: field in json_config, required_fields)):
             raise Exception("Required field is missing from config.json!")
 

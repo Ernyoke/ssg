@@ -5,15 +5,25 @@ ssg - *Static Site Generator* used to generate my static site: [https://ervinszi
 ## Install
 
 ```bash
-uvx git+https://github.com/thisdavej/wordlookup-tutorial.git
+uv tool install git+https://github.com/Ernyoke/ssg.git
 ```
 
 ## Usage
 
 ```bash
-usage: ssg [-h] source destination base_path
+usage: ssg [-h] config
 
 positional arguments:
+  config      Path of the config.json file
+
+options:
+  -h, --help  show this help message and exit
+```
+
+Example:
+
+```bash
+ssg ./config.json
 ```
 
 `config.json` content:
@@ -33,7 +43,7 @@ positional arguments:
     },
     "matchers": [
       {
-        "file": "src/resume.md",
+        "file": "resume.md",
         "action": "STATIC",
         "meta": {
           "og:title": "Resume - ervinszilagyi.dev",
@@ -41,15 +51,15 @@ positional arguments:
         }
       },
       {
-        "file": "src/index.md",
+        "file": "index.md",
         "action": "USE_DEFAULT"
       },
       {
-        "file": "src/*.md",
+        "file": "*.md",
         "action": "TAKE_FROM_CONTENT"
       },
       {
-        "file": "src/articles/*",
+        "file": "articles/*",
         "action": "TAKE_FROM_CONTENT"
       }
     ]
@@ -82,5 +92,11 @@ uv build
 ### Installing from local whl
 
 ```bash
-uv install
+uv tool install dist/ssg-*.whl
+```
+
+### Running tests
+
+```bash
+uv run pytest tests/
 ```

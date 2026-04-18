@@ -4,24 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ssg"
-version = "0.10.0"
+version = "0.11.0"
 authors = [{name = "Ervin Szilagyi", email = "ervin_szilagyi@outlook.com"}]
 description = "Static site generator"
 keywords = ["static site generator"]
 license = {text = "MIT"}
 classifiers = [
-    "License :: MIT License",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
 urls = {Homepage = "https://github.com/Ernyoke/ssg"}
 requires-python = ">=3.12"
 dependencies = [
-    "lxml >= 6.0.1",
-    "beautifulsoup4 >= 4.13.5",
-    "Markdown >= 3.9",
+    "lxml >= 6.1.0",
+    "beautifulsoup4 >= 4.14.3",
+    "Markdown >= 3.10.2",
     "python-slugify >= 8.0.4",
-    "pygit2 >= 1.18.2",
-    "pymdown-extensions >= 10.16.1",
+    "pygit2 >= 1.19.2",
+    "pymdown-extensions >= 10.21.2"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
 ]
 
 [project.readme]
@@ -42,3 +47,11 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+markers = [
+    "unit: fast, isolated unit tests",
+    "integration: slower tests that perform real file I/O",
+]

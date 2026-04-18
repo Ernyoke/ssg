@@ -89,4 +89,4 @@ def get_last_edited_for_markdown_files(root: DirectoryNode, source_dir: Path) ->
     markdown_file_paths = {
         source_dir / file.path for file in root.traverse(NodeType.FILE) if file.is_markdown()
     }
-    return git_client.get_last_edit_time_for_files(markdown_file_paths)  # bytes preserved
+    return git_client.get_last_edit_time_for_files(markdown_file_paths)

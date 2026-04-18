@@ -248,13 +248,13 @@ class TestInsertOgMeta(TestCase):
         hf = _make_html_file()
         self._insert(hf, title=None)
         tag = hf.soup.find('meta', attrs={'property': 'og:title'})
-        self.assertEqual(tag['content'], '')
+        self.assertIsNone(tag)
 
-    def test_none_description_defaults_to_empty_string(self):
+    def test_none_description_defaults_to_missing_description(self):
         hf = _make_html_file()
         self._insert(hf, description=None)
         tag = hf.soup.find('meta', attrs={'property': 'og:description'})
-        self.assertEqual(tag['content'], '')
+        self.assertIsNone(tag)
 
 
 class TestSetTitle(TestCase):

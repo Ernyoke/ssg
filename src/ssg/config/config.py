@@ -55,7 +55,7 @@ class Config:
         :param json_config: config.json content as a dictionary
         :return: Config object
         """
-        required_fields = ['source', 'destination', 'baseHref']
+        required_fields = ['source', 'destination', 'baseHref', 'hostname']
         if not all(map(lambda field: field in json_config, required_fields)):
             raise Exception("Required field is missing from config.json!")
 

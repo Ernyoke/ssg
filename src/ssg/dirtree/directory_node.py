@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, TypeVar, overload, Literal, Iterator
+from typing import TypeVar, overload, Literal, Iterator
 
 from ssg.dirtree.file_node import FileNode
 from ssg.dirtree.node import Node, NodeType

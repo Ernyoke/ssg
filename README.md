@@ -43,7 +43,7 @@ ssg ./config.json
     },
     "matchers": [
       {
-        "file": "src/resume.md",
+        "file": "resume.md",
         "action": "STATIC",
         "meta": {
           "og:title": "Resume - ervinszilagyi.dev",
@@ -51,15 +51,15 @@ ssg ./config.json
         }
       },
       {
-        "file": "src/index.md",
+        "file": "index.md",
         "action": "USE_DEFAULT"
       },
       {
-        "file": "src/*.md",
+        "file": "*.md",
         "action": "TAKE_FROM_CONTENT"
       },
       {
-        "file": "src/articles/*",
+        "file": "articles/*",
         "action": "TAKE_FROM_CONTENT"
       }
     ]

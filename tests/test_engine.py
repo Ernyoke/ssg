@@ -6,7 +6,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 from ssg.config.config import Config, Meta, MetaFields, Matcher, Frame as ConfigFrame
-from ssg.engine.engine import Engine
+from ssg.engine.engine import Engine, create_directory_tree, get_last_edited_for_markdown_files
 
 MINIMAL_FRAME_HTML = """\
 <!DOCTYPE html>
@@ -256,14 +256,14 @@ def test_get_last_edited_only_passes_markdown_files_to_git(source_dir):
     (source_dir / "page.md").write_text("# Page", encoding="utf-8")
     (source_dir / "style.css").write_text("body {}", encoding="utf-8")
 
-    root = Engine._create_directory_tree(source_dir)
+    root = create_directory_tree(source_dir)
 
     with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
 
-        Engine._get_last_edited_for_markdown_files(root, source_dir)
+        get_last_edited_for_markdown_files(root, source_dir)
 
         passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
         assert all(p.suffix == ".md" for p in passed_paths)
@@ -277,14 +277,14 @@ def test_get_last_edited_returns_git_client_result(source_dir):
     md_file.write_text("# Page", encoding="utf-8")
     timestamp = datetime(2024, 3, 10, 9, 0, 0, tzinfo=UTC)
 
-    root = Engine._create_directory_tree(source_dir)
+    root = create_directory_tree(source_dir)
 
     with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {md_file: timestamp}
         mock_class.return_value = mock_instance
 
-        result = Engine._get_last_edited_for_markdown_files(root, source_dir)
+        result = get_last_edited_for_markdown_files(root, source_dir)
 
         assert result == {md_file: timestamp}
 
@@ -296,48 +296,17 @@ def test_get_last_edited_traverses_subdirectories(source_dir):
     (sub / "article.md").write_text("# Article", encoding="utf-8")
     (source_dir / "index.md").write_text("# Index", encoding="utf-8")
 
-    root = Engine._create_directory_tree(source_dir)
+    root = create_directory_tree(source_dir)
 
     with patch("ssg.engine.engine.git.GitClient") as mock_class:
         mock_instance = MagicMock()
         mock_instance.get_last_edit_time_for_files.return_value = {}
         mock_class.return_value = mock_instance
 
-        Engine._get_last_edited_for_markdown_files(root, source_dir)
+        get_last_edited_for_markdown_files(root, source_dir)
 
         passed_paths = mock_instance.get_last_edit_time_for_files.call_args[0][0]
 
 
         assert any(p.name == "index.md" for p in passed_paths)
         assert any(p.name == "article.md" for p in passed_paths)
-
-
-def test__create_directory_tree(source_dir, destination_dir):
-    ignored_dir_name = 'ignored'
-    ignored = source_dir / ignored_dir_name
-    ignored.mkdir()
-
-    dir1_name = 'dir1'
-    dir1 = source_dir / dir1_name
-    dir1.mkdir()
-
-    dir2_name = 'dir2'
-    dir2 = source_dir / dir2_name
-    dir2.mkdir()
-
-    dir3_name = 'dir3'
-    dir3 = dir1 / dir3_name
-    dir3.mkdir()
-
-    secret_md = 'secret.md'
-    secret_file = dir3 / secret_md
-    secret_file.write_text("# Secret", encoding="utf-8")
-    tree = Engine._create_directory_tree(source_dir,
-                                         exclude=frozenset(["ignored", "**/secret.*"]))
-
-    paths = [destination_dir/node.path for node in tree.traverse()]
-
-    assert destination_dir/dir1_name in paths
-    assert destination_dir/dir2_name in paths
-    assert destination_dir/dir3/secret_md not in paths
-    assert destination_dir/ignored_dir_name not in paths

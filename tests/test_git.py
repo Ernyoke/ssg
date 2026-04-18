@@ -75,18 +75,25 @@ class TestGitClient(TestCase):
 
         self.assertNotIn(file_path, result)
 
-    def test_get_last_edit_time_root_commit_skipped(self):
-        """A root commit (no parents) is silently skipped and diff is never called."""
+    def test_get_last_edit_time_root_commit_inspected(self):
+        """A root commit (no parents) is diffed against an empty tree so that
+        files introduced in the initial commit still receive a timestamp."""
         file_path = self.repo_root / 'src' / 'index.md'
+        ts = 1_700_000_000
         root_commit = MagicMock()
         root_commit.parents = []
+        root_commit.commit_time = ts
+        root_commit.tree.diff_to_tree.return_value = [self._make_patch('src/index.md')]
 
         self.mock_repo.status.return_value = {}
         self.mock_repo.walk.return_value = iter([root_commit])
 
         result = self.client.get_last_edit_time_for_files({file_path})
 
-        self.assertNotIn(file_path, result)
+        self.assertEqual(result[file_path], datetime.fromtimestamp(ts, UTC))
+        # The root commit must be diffed against an empty tree (swap=True),
+        # not via repo.diff(parent, commit).
+        root_commit.tree.diff_to_tree.assert_called_once_with(swap=True)
         self.mock_repo.diff.assert_not_called()
 
     def test_get_last_edit_time_multiple_files_in_different_commits(self):

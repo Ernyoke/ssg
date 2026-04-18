@@ -13,10 +13,10 @@ from ssg.content.frame import Frame
 
 class HTMLFile:
     @staticmethod
-    def from_article(article: Article, frame: Frame, base_href: str) -> 'HTMLFile':
+    def from_article(article: Article, frame: Frame, base_href: str, hostname: str = None) -> 'HTMLFile':
         soup = BeautifulSoup(article.markdown.convert_to_html(), 'lxml')
         html_file = HTMLFile(frame.embed_content(soup))
-        html_file.set_title(article.title)
+        html_file.set_title(article.title, hostname=hostname)
         html_file.add_target_blank_to_external_urls(base_href)
         html_file.add_anchor_links()
 
@@ -85,60 +85,59 @@ class HTMLFile:
             print(f'Warning! Could not find head tag in HTML document. Skipping adding og:meta fields.')
             return
 
-        meta_title = self.soup.new_tag('meta', attrs={
-            'property': 'og:title',
-            'content': title or ''
-        })
-        head.append(meta_title)
+        if title is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'og:title',
+                'content': title
+            }))
 
-        meta_description = self.soup.new_tag('meta', attrs={
-            'property': 'og:description',
-            'content': description or ''
-        })
-        head.append(meta_description)
+        if description is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'og:description',
+                'content': description
+            }))
 
-        meta_url = self.soup.new_tag('meta', attrs={
-            'property': 'og:url',
-            'content': url or ''
-        })
-        head.append(meta_url)
+        if url is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'og:url',
+                'content': url
+            }))
 
-        meta_image = self.soup.new_tag('meta', attrs={
-            'property': 'og:image',
-            'content': urljoin(base_href, cover_image) if cover_image else ''
-        })
-        head.append(meta_image)
+        if cover_image is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'og:image',
+                'content': urljoin(base_href, cover_image)
+            }))
 
         # Twitter specific meta tags
-        twitter_meta_title = self.soup.new_tag('meta', attrs={
-            'property': 'twitter:title',
-            'content': title or ''
-        })
-        head.append(twitter_meta_title)
+        if title is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'twitter:title',
+                'content': title
+            }))
 
-        twitter_meta_description = self.soup.new_tag('meta', attrs={
-            'property': 'twitter:description',
-            'content': description or ''
-        })
-        head.append(twitter_meta_description)
+        if description is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'twitter:description',
+                'content': description
+            }))
 
-        twitter_meta_site = self.soup.new_tag('meta', attrs={
-            'property': 'twitter:site',
-            'content': twitter_handle or ''
-        })
-        head.append(twitter_meta_site)
+        if twitter_handle is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'twitter:site',
+                'content': twitter_handle
+            }))
 
-        twitter_meta_creator = self.soup.new_tag('meta', attrs={
-            'property': 'twitter:creator',
-            'content': twitter_handle or ''
-        })
-        head.append(twitter_meta_creator)
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'twitter:creator',
+                'content': twitter_handle
+            }))
 
-        twitter_meta_image = self.soup.new_tag('meta', attrs={
-            'property': 'twitter:image',
-            'content': urljoin(base_href, cover_image) if cover_image else ''
-        })
-        head.append(twitter_meta_image)
+        if cover_image is not None:
+            head.append(self.soup.new_tag('meta', attrs={
+                'property': 'twitter:image',
+                'content': urljoin(base_href, cover_image)
+            }))
 
         twitter_meta_card = self.soup.new_tag('meta', attrs={
             'property': 'twitter:card',
@@ -147,11 +146,10 @@ class HTMLFile:
         head.append(twitter_meta_card)
 
         if last_edited_time:
-            last_updated = self.soup.new_tag('meta', attrs={
+            head.append(self.soup.new_tag('meta', attrs={
                 'name': 'last-updated',
                 'content': last_edited_time.strftime('%Y-%m-%d %H:%M:%S %Z')
-            })
-            head.append(last_updated)
+            }))
 
     def set_title(self, title, hostname=None):
         """

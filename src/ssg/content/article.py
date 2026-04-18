@@ -8,22 +8,24 @@ class Article:
     def __init__(self,
                  markdown_file: MarkDownFile,
                  title: str,
+                 description: str|None,
                  cover_image: Path|None,
                  url: str|None,
                  last_edited: datetime|None,
                  twitter_handle: str|None):
         self.markdown = markdown_file
         self.title = title
+        self.description = description
         self.cover_image = cover_image
         self.url = url
         self.last_edited = last_edited
         self.twitter_handle = twitter_handle
 
     def get_title(self) -> str|None:
-        return self.title if self.title else self.markdown.get_title()
+        return self.title
 
-    def get_description(self) -> str:
-        return f'{self.title}: {self.url}'
+    def get_description(self) -> str|None:
+        return self.description
 
     def get_cover_image(self) -> Path|None:
         return self.cover_image

@@ -17,10 +17,6 @@ class MarkDownFile:
                            'smarty',
                            'pymdownx.tilde']
 
-    def read(self, path):
-        with open(path, encoding='utf-8') as file:
-            self.content = file.read()
-
     def convert_to_html(self) -> str:
         html_content = markdown.markdown(self.content,
                                          extensions=self.extensions)

@@ -14,8 +14,8 @@ def main():
     parser.add_argument("config", help="Path of the config.json file", type=Path)
     args = parser.parse_args()
     config = read_config(args.config)
-    ssg_engine = Engine()
-    ssg_engine.run(config)
+    ssg_engine = Engine(config)
+    ssg_engine.run()
 
 
 if __name__ == '__main__':

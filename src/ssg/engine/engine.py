@@ -1,5 +1,3 @@
-import fnmatch
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -9,78 +7,55 @@ from ssg.engine.meta import get_meta
 from ssg.git import git
 from ssg.config import Config
 from ssg.content.article import Article
-from ssg.dirtree.directory_node import DirectoryNode, FileNode
+from ssg.dirtree.directory_node import DirectoryNode
 from ssg.dirtree.node import NodeType
-from ssg.content.frame import Frame
-from ssg.content.html_file import HTMLFile
 from ssg.content.markdown_file import MarkDownFile
+from ssg.template.template_engine import TemplateEngine
 
 
 class Engine:
     """
 
     Usage:
-    engine = Engine()
-    engine.run(config)
+    engine = Engine(config)
+    engine.run()
     """
 
-    def __init__(self):
-        self.frames_cache = dict()
+    def __init__(self, config: Config):
+        self.config = config
+        self.template_engine = TemplateEngine(config)
 
-    def run(self, config: Config) -> None:
+    def run(self) -> None:
         """
         Entry point. Generate a new static site project by traversing the source directory and transforming Markdown files
         into HTML.
         :return: None
         """
-        root = create_directory_tree(config.source, frozenset(config.exclude))
-        last_edited = get_last_edited_for_markdown_files(root, config.source)
-        root.mk_dir_tree(config.destination)
-        frames_to_exclude = set(frame.frame for frame in config.frames)
+        root = create_directory_tree(self.config.source, frozenset(self.config.exclude))
+        root.mk_dir_tree(self.config.destination)
+
+        last_edited = get_last_edited_for_markdown_files(root, self.config.source)
 
         for file in root.traverse(NodeType.FILE):
             if file.is_markdown():
-                resolved = get_meta(file, config.meta, config.base_href)
-                markdown = MarkDownFile.read_from_file(config.source / file.path)
+                resolved = get_meta(file, self.config.meta, self.config.base_href)
+                markdown = MarkDownFile.read_from_file(self.config.source / file.path)
                 article = Article(
                     markdown_file=markdown,
                     title=resolved.title if resolved.title is not None else markdown.get_title(),
                     description=resolved.description,
                     cover_image=resolved.cover_image,
                     url=resolved.url,
-                    last_edited=last_edited.get(config.source / file.path),
+                    last_edited=last_edited.get(self.config.source / file.path),
                     twitter_handle=resolved.twitter_handle
                 )
-                frame = self._get_frame(file, config)
-                html_file = HTMLFile.from_article(article,
-                                                  frame,
-                                                  base_href=config.base_href,
-                                                  hostname=config.hostname)
-                destination_path = config.destination / file.path.parent / Path(f'{file.name}.html')
-                html_file.write(destination_path)
+                destination_path = self.config.destination / file.path.parent / Path(f'{file.name}.html')
+                self.template_engine.render(file, article, destination_path)
                 print(f'Created {destination_path.as_posix()}')
             else:
-                if file.path not in frames_to_exclude:
-                    shutil.copyfile(config.source / file.path, config.destination / file.path)
-                    print(f'Copied {(config.destination / file.path).as_posix()}')
-
-    def _get_frame(self, file: FileNode, config: Config) -> Frame:
-        frame_path = None
-        for f in config.frames:
-            if fnmatch.fnmatch(file.path.as_posix(), f.file):
-                frame_path = f.frame
-                break
-
-        if not frame_path:
-            raise AssertionError(f'No frame found for {file.path.as_posix()}')
-
-        if frame_path in self.frames_cache:
-            return self.frames_cache[frame_path]
-
-        frame = Frame.read_from_file(config.source / frame_path)
-        frame.set_base_path(config.base_href)
-        self.frames_cache[frame_path] = frame
-        return self.frames_cache[frame_path]
+                if file.path not in frozenset(frame.frame for frame in self.config.frames):
+                    shutil.copyfile(self.config.source / file.path, self.config.destination / file.path)
+                    print(f'Copied {(self.config.destination / file.path).as_posix()}')
 
 
 def get_last_edited_for_markdown_files(root: DirectoryNode, source_dir: Path) -> dict[Path, datetime]:

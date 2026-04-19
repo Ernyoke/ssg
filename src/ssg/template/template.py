@@ -6,10 +6,10 @@ import bs4
 from bs4 import BeautifulSoup, Tag
 
 
-class Frame:
+class Template:
     """
-    Used to process a frame.
-    A frame is an HTML file with a placeholder for embedding other HTML content, such as an article.
+    Used to process a template.
+    A template is an HTML file with a placeholder for embedding other HTML content, such as an article.
     """
 
     def __init__(self, content: str):
@@ -18,15 +18,15 @@ class Frame:
     @staticmethod
     def read_from_file(path: Path):
         """
-        Read a frame from a file.
+        Read a template from a file.
         :param path: Path to the file.
         """
         with open(path, encoding='utf-8') as file:
-            return Frame(file.read())
+            return Template(file.read())
 
     def embed_content(self, soup: BeautifulSoup, content_element_id="main-content") -> BeautifulSoup:
         """
-        Embed HTML content into the current frame.
+        Embed HTML content into the current template.
         :param soup: HTML content.
         :param content_element_id: ID of HTML element where the embedding should happen.
         """

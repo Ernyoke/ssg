@@ -8,14 +8,14 @@ from lxml import html, etree
 from slugify import slugify
 
 from ssg.content.article import Article
-from ssg.content.frame import Frame
+from ssg.template.template import Template
 
 
 class HTMLFile:
     @staticmethod
-    def from_article(article: Article, frame: Frame, base_href: str, hostname: str = None) -> 'HTMLFile':
+    def from_article(article: Article, template: Template, base_href: str, hostname: str = None) -> 'HTMLFile':
         soup = BeautifulSoup(article.markdown.convert_to_html(), 'lxml')
-        html_file = HTMLFile(frame.embed_content(soup))
+        html_file = HTMLFile(template.embed_content(soup))
         html_file.set_title(article.title, hostname=hostname)
         html_file.add_target_blank_to_external_urls(base_href)
         html_file.add_anchor_links()

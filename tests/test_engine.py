@@ -84,7 +84,7 @@ class TestEngineBase(TestCase):
             mock_instance = MagicMock()
             mock_instance.get_last_edit_time_for_files.return_value = git_timestamps or {}
             mock_class.return_value = mock_instance
-            Engine().run(config)
+            Engine(config).run()
 
     def _read_output(self, relative_path: Path | str) -> str:
         return (self.destination_dir / relative_path).read_text(encoding="utf-8")

@@ -1,7 +1,10 @@
 import shutil
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urljoin
 
+from ssg.content.article import Author
+from ssg.rss.rss_feed_generator import RssFeedGenerator
 from ssg.dirtree.create_directory_tree import create_directory_tree
 from ssg.engine.meta import get_meta
 from ssg.git import git
@@ -24,6 +27,7 @@ class Engine:
     def __init__(self, config: Config):
         self.config = config
         self.template_engine = TemplateEngine(config)
+        self.rssFeedGenerator = RssFeedGenerator(config.rssFeeds)
 
     def run(self) -> None:
         """
@@ -38,17 +42,24 @@ class Engine:
 
         for file in root.traverse(NodeType.FILE):
             if file.is_markdown():
-                resolved = get_meta(file, self.config.meta, self.config.base_href)
+                resolved = get_meta(file, self.config.meta, self.config.baseHref)
                 markdown = MarkDownFile.read_from_file(self.config.source / file.path)
+                cover_image_path = resolved.cover_image.as_posix() if resolved.cover_image else None
+                cover_image = urljoin(self.config.baseHref, cover_image_path) if cover_image_path else None
                 article = Article(
-                    markdown_file=markdown,
+                    markdown=markdown,
                     title=resolved.title if resolved.title is not None else markdown.get_title(),
                     description=resolved.description,
-                    cover_image=resolved.cover_image,
+                    cover_image=cover_image,
                     url=resolved.url,
                     last_edited=last_edited.get(self.config.source / file.path),
-                    twitter_handle=resolved.twitter_handle
+                    author=Author(
+                        name=resolved.author,
+                        email=resolved.author_email,
+                        twitter_handle=resolved.twitter_handle
+                    )
                 )
+                self.rssFeedGenerator.add_to_feed(file, article)
                 destination_path = self.config.destination / file.path.parent / Path(f'{file.name}.html')
                 self.template_engine.render(file, article, destination_path)
                 print(f'Created {destination_path.as_posix()}')
@@ -56,6 +67,8 @@ class Engine:
                 if file.path not in frozenset(frame.frame for frame in self.config.frames):
                     shutil.copyfile(self.config.source / file.path, self.config.destination / file.path)
                     print(f'Copied {(self.config.destination / file.path).as_posix()}')
+
+        self.rssFeedGenerator.generate_feeds(self.config.destination)
 
 
 def get_last_edited_for_markdown_files(root: DirectoryNode, source_dir: Path) -> dict[Path, datetime]:

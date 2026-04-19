@@ -70,7 +70,7 @@ class TestEngineBase(TestCase):
         return Config(
             source=self.source_dir,
             destination=self.destination_dir,
-            base_href="https://example.com/",
+            baseHref="https://example.com/",
             hostname="example.com",
             exclude=exclude or [],
             meta=meta,

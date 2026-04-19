@@ -16,18 +16,17 @@ class HTMLFile:
     def from_article(article: Article, template: Template, base_href: str, hostname: str = None) -> 'HTMLFile':
         soup = BeautifulSoup(article.markdown.convert_to_html(), 'lxml')
         html_file = HTMLFile(template.embed_content(soup))
-        html_file.set_title(article.title, hostname=hostname)
+        html_file.set_page_title(article.title, hostname=hostname)
         html_file.add_target_blank_to_external_urls(base_href)
         html_file.add_anchor_links()
 
-        cover_image = article.get_cover_image()
-        html_file.insert_og_meta(title=article.get_title(),
-                                 description=article.get_description(),
+        html_file.insert_og_meta(title=article.title,
+                                 description=article.description,
                                  url=article.url,
-                                 cover_image=cover_image.as_posix() if cover_image else None,
-                                 twitter_handle=article.get_twitter_handle(),
+                                 cover_image=article.cover_image,
+                                 twitter_handle=article.author.twitter_handle,
                                  base_href=base_href,
-                                 last_edited_time=article.get_last_edited())
+                                 last_edited_time=article.last_edited)
 
         return html_file
 
@@ -151,7 +150,7 @@ class HTMLFile:
                 'content': last_edited_time.strftime('%Y-%m-%d %H:%M:%S %Z')
             }))
 
-    def set_title(self, title, hostname=None):
+    def set_page_title(self, title, hostname=None):
         """
         Set the HTML title from the head of the document.
         :param title: HTML title

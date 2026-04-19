@@ -260,19 +260,19 @@ class TestInsertOgMeta(TestCase):
 class TestSetTitle(TestCase):
     def test_title_set_without_hostname(self):
         hf = _make_html_file()
-        hf.set_title('New Title')
+        hf.set_page_title('New Title')
         title_tag = hf.soup.find('title')
         self.assertEqual(title_tag.string, 'New Title')
 
     def test_title_set_with_hostname(self):
         hf = _make_html_file()
-        hf.set_title('My Page', hostname='example.com')
+        hf.set_page_title('My Page', hostname='example.com')
         title_tag = hf.soup.find('title')
         self.assertEqual(title_tag.string, 'My Page - example.com')
 
     def test_title_none_hostname_omitted(self):
         hf = _make_html_file()
-        hf.set_title('Only Title', hostname=None)
+        hf.set_page_title('Only Title', hostname=None)
         title_tag = hf.soup.find('title')
         self.assertEqual(title_tag.string, 'Only Title')
 
@@ -280,7 +280,7 @@ class TestSetTitle(TestCase):
         html = '<html><head><title>A</title><title>B</title></head><body></body></html>'
         soup = BeautifulSoup(html, 'lxml')
         hf = HTMLFile(soup)
-        hf.set_title('Updated')
+        hf.set_page_title('Updated')
         titles = [t.string for t in hf.soup.find_all('title')]
         self.assertTrue(all(t == 'Updated' for t in titles))
 
@@ -295,7 +295,7 @@ class TestWrite(TestCase):
 
     def test_write_content_is_valid_html(self):
         hf = _make_html_file()
-        hf.set_title('Written Page')
+        hf.set_page_title('Written Page')
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / 'output.html'
             hf.write(dest)

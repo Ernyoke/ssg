@@ -47,7 +47,7 @@ class TemplateEngine:
             return self.cache[template_path]
 
         template = Template.read_from_file(self.config.source / template_path)
-        template.set_base_path(self.config.base_href)
+        template.set_base_path(self.config.baseHref)
         self.cache[template_path] = template
         return self.cache[template_path]
 
@@ -62,6 +62,6 @@ class TemplateEngine:
         template = self.get_template(file)
         html_file = HTMLFile.from_article(article,
                                           template,
-                                          base_href=self.config.base_href,
+                                          base_href=self.config.baseHref,
                                           hostname=self.config.hostname)
         html_file.write(destination_path)

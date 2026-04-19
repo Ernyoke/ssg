@@ -21,7 +21,8 @@ dependencies = [
     "Markdown >= 3.10.2",
     "python-slugify >= 8.0.4",
     "pygit2 >= 1.19.2",
-    "pymdown-extensions >= 10.21.2"
+    "pymdown-extensions >= 10.21.2",
+    "feedgen>=1.0.0",
 ]
 
 [dependency-groups]

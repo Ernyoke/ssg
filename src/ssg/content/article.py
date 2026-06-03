@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 
 from ssg.content.markdown_file import MarkDownFile
 
@@ -21,3 +20,4 @@ class Article:
     cover_image: str | None = None
     description: str | None = None
     last_edited: datetime | None = None
+    publish_date: datetime | None = None

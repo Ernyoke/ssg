@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from bs4 import BeautifulSoup
 
-from ssg.config.config import Config, Frame as ConfigFrame, Matcher, Meta, MetaFields
+from ssg.config.config import Config, Frame as ConfigFrame
 from ssg.engine.engine import Engine, create_directory_tree, get_last_edited_for_markdown_files
 
 MINIMAL_FRAME_HTML = """\
@@ -22,6 +22,10 @@ MINIMAL_FRAME_HTML = """\
 """
 
 SAMPLE_MARKDOWN = """\
+title: Hello World
+summary: This is a test article.
+cover: cover.png
+
 # Hello World
 
 This is a test article.
@@ -54,18 +58,7 @@ class TestEngineBase(TestCase):
         path.write_text(content, encoding="utf-8")
         return path
 
-    def _make_config(self, extra_matchers=None, exclude=None) -> Config:
-        default_meta = MetaFields(
-            title="Test Site",
-            image="images/cover.png",
-            description="Test description.",
-            url="https://example.com",
-            twitter_handle="@test",
-        )
-        matchers = [Matcher(file="*.md", action="TAKE_FROM_CONTENT", meta_fields=None)]
-        if extra_matchers:
-            matchers = extra_matchers + matchers
-        meta = Meta(default=default_meta, matchers=matchers)
+    def _make_config(self, exclude=None) -> Config:
         frame = ConfigFrame(file="*.md", frame=self.frame_file)
         return Config(
             source=self.source_dir,
@@ -73,7 +66,6 @@ class TestEngineBase(TestCase):
             baseHref="https://example.com/",
             hostname="example.com",
             exclude=exclude or [],
-            meta=meta,
             frames=[frame],
         )
 
@@ -113,27 +105,13 @@ class TestEngineRun(TestEngineBase):
         self.assertIn("og:image", content)
 
     def test_output_html_title_derived_from_markdown_heading(self):
-        """With TAKE_FROM_CONTENT matcher the <title> tag must be set from the first heading."""
+        """The <title> tag must be set from the markdown 'title' metadata."""
         self._run_engine(self._make_config())
 
         soup = BeautifulSoup(self._read_output("test.html"), "lxml")
         title_tag = soup.find("title")
         self.assertIsNotNone(title_tag)
         self.assertIn("Hello World", title_tag.text)
-
-    def test_static_meta_matcher_overrides_title(self):
-        """With a STATIC matcher the og:title must be taken from the matcher's meta_fields."""
-        static_meta = MetaFields(
-            title="Overridden Title",
-            image=None,
-            description=None,
-            url=None,
-            twitter_handle=None,
-        )
-        static_matcher = Matcher(file="test.md", action="STATIC", meta_fields=static_meta)
-        self._run_engine(self._make_config(extra_matchers=[static_matcher]))
-
-        self.assertIn("Overridden Title", self._read_output("test.html"))
 
     def test_markdown_links_converted_to_html_links(self):
         """Hyperlinks pointing to .md files must be rewritten to .html in the output."""

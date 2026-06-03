@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ssg"
-version = "0.12.0"
+version = "0.13.0"
 authors = [{name = "Ervin Szilagyi", email = "ervin_szilagyi@outlook.com"}]
 description = "Static site generator"
 keywords = ["static site generator"]

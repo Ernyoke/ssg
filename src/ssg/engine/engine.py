@@ -6,11 +6,10 @@ from urllib.parse import urljoin
 from ssg.content.article import Author
 from ssg.rss.rss_feed_generator import RssFeedGenerator
 from ssg.dirtree.create_directory_tree import create_directory_tree
-from ssg.engine.meta import get_meta
 from ssg.git import git
 from ssg.config import Config
 from ssg.content.article import Article
-from ssg.dirtree.directory_node import DirectoryNode
+from ssg.dirtree.directory_node import DirectoryNode, FileNode
 from ssg.dirtree.node import NodeType
 from ssg.content.markdown_file import MarkDownFile
 from ssg.template.template_engine import TemplateEngine
@@ -42,21 +41,21 @@ class Engine:
 
         for file in root.traverse(NodeType.FILE):
             if file.is_markdown():
-                resolved = get_meta(file, self.config.meta, self.config.baseHref)
                 markdown = MarkDownFile.read_from_file(self.config.source / file.path)
-                cover_image_path = resolved.cover_image.as_posix() if resolved.cover_image else None
-                cover_image = urljoin(self.config.baseHref, cover_image_path) if cover_image_path else None
+                url_computed = urljoin(self.config.baseHref, file.path.with_suffix('.html').as_posix())
                 article = Article(
                     markdown=markdown,
-                    title=resolved.title if resolved.title is not None else markdown.get_title(),
-                    description=resolved.description,
-                    cover_image=cover_image,
-                    url=resolved.url,
+                    title=markdown.get_title(),
+                    description=markdown.get_summary(),
+                    cover_image=compute_cover_image_path(markdown, file, self.config.baseHref),
+                    url=urljoin(self.config.baseHref, url_computed),
                     last_edited=last_edited.get(self.config.source / file.path),
+                    publish_date=markdown.get_publish_date(),
                     author=Author(
-                        name=resolved.author,
-                        email=resolved.author_email,
-                        twitter_handle=resolved.twitter_handle
+                        name=markdown.get_author(),
+                        email=markdown.get_email(),
+                        twitter_handle=markdown.get_twitter_handle(),
+                        github_handle=markdown.get_github_handle()
                     )
                 )
                 self.rssFeedGenerator.add_to_feed(file, article)
@@ -78,3 +77,13 @@ def get_last_edited_for_markdown_files(root: DirectoryNode, source_dir: Path) ->
         source_dir / file.path for file in root.traverse(NodeType.FILE) if file.is_markdown()
     }
     return git_client.get_last_edit_time_for_files(markdown_file_paths)
+
+def compute_cover_image_path(markdown: MarkDownFile, file: FileNode, base_href: str):
+    cover_image = markdown.get_cover_image()
+    cover_image_computed = None
+    if cover_image is not None and file.parent is not None:
+        cover_image_path = file.parent.path / cover_image
+        cover_image_path.resolve()
+        cover_image_computed = urljoin(base_href, cover_image_path.as_posix())
+
+    return cover_image_computed

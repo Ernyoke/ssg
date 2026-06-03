@@ -37,17 +37,17 @@ def _make_article_mock(
     title: str = "Post Title",
     description: str = "Post description",
     url: str = "https://example.com/post",
-    last_edited: datetime | None = None,
+    publish_date: datetime | None = None,
     author_name: str = "Jane Doe",
     author_email: str = "jane@example.com",
     twitter_handle: str = "@johndoe",
 ) -> Article:
     return Article(
-        markdown=MarkDownFile(""),
+        markdown=MarkDownFile(Path("post.md"), ""),
         title=title,
         description=description,
         url=url,
-        last_edited=last_edited,
+        publish_date=publish_date,
         author=Author(name=author_name, email=author_email, twitter_handle=twitter_handle),
     )
 
@@ -91,7 +91,7 @@ class TestRssFeedGeneratorAddToFeed(TestCase):
         file_node = FileNode(Path("posts/hello.md"))
         article = _make_article_mock(
             title="Hello",
-            last_edited=datetime(2025, 1, 1, tzinfo=UTC),
+            publish_date=datetime(2025, 1, 1, tzinfo=UTC),
         )
 
         gen.add_to_feed(file_node, article)
@@ -153,7 +153,7 @@ class TestRssFeedGeneratorGenerateFeeds(TestCase):
     def _add_article(gen: RssFeedGenerator, path: str, *, title: str, when: datetime | None):
         gen.add_to_feed(
             FileNode(Path(path)),
-            _make_article_mock(title=title, url=f"https://example.com/{title}", last_edited=when),
+            _make_article_mock(title=title, url=f"https://example.com/{title}", publish_date=when),
         )
 
     @staticmethod
@@ -251,7 +251,7 @@ class TestRssFeedGeneratorGenerateFeeds(TestCase):
                 title="Hello",
                 description="A greeting",
                 url="https://example.com/hello",
-                last_edited=datetime(2025, 5, 5, tzinfo=UTC),
+                publish_date=datetime(2025, 5, 5, tzinfo=UTC),
                 author_name="Jane Doe",
                 author_email="jane@example.com",
             ),

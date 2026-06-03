@@ -49,7 +49,7 @@ class RssFeedGenerator:
                     link=article.url,
                     guid=article.url,
                     cover_image=article.cover_image,
-                    pubDate=article.last_edited,
+                    pubDate=article.publish_date,
                     author_name=article.author.name,
                     author_email=article.author.email,
                 ))

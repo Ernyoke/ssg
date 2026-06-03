@@ -1,66 +1,82 @@
+from datetime import datetime
 import re
+from pathlib import Path
 from typing import Optional
 
 import markdown
 
-# ATX heading: 1–6 leading '#', a space, then the title text. Trailing '#'s are stripped.
-_ATX_HEADING_RE = re.compile(r'^(#{1,6})\s+(.*?)\s*#*\s*$')
-# Fenced code block delimiter: ``` or ~~~ (optionally followed by an info string).
-_FENCE_RE = re.compile(r'^(?:`{3,}|~{3,})')
-
-
 class MarkDownFile:
-    def __init__(self, content: str):
+    def __init__(self, path: Path, content: str):
+        self.path = path
         self.content = content
         self.extensions = ['extra',
                            'sane_lists',
                            'smarty',
-                           'pymdownx.tilde']
-
-    def convert_to_html(self) -> str:
-        html_content = markdown.markdown(self.content,
-                                         extensions=self.extensions)
-        return html_content
+                           'pymdownx.tilde',
+                           'meta']
+        self.md = markdown.Markdown(extensions=self.extensions)
+        self.html = self.md.convert(content)
 
     def get_title(self) -> Optional[str]:
-        """
-        Infer the page title from the Markdown content.
+        title_list = self.md.Meta.get('title', [])
+        if len(title_list) > 0:
+            return title_list[0]
+        return None
 
-        Walks the document once and returns:
-          - the first level-1 ATX heading ('# Title') if found, otherwise
-          - the first ATX heading of any level, otherwise
-          - ``None``.
+    def get_summary(self) -> Optional[str]:
+        summary_list = self.md.Meta.get('summary', [])
+        if len(summary_list) > 0:
+            return summary_list[0]
+        return None
 
-        Lines inside fenced code blocks (``` or ~~~) are ignored.
-        """
-        first_heading: Optional[str] = None
-        in_fence = False
+    def get_author(self) -> Optional[str]:
+        author = self.md.Meta.get('author', [])
+        if len(author) > 0:
+            return author[0]
+        return None
 
-        for line in self.content.splitlines():
-            stripped = line.strip()
+    def get_twitter_handle(self) -> Optional[str]:
+        twitter_handle = self.md.Meta.get('twitter', [])
+        if len(twitter_handle) > 0:
+            return twitter_handle[0]
+        return None
 
-            if _FENCE_RE.match(stripped):
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                continue
+    def get_email(self) -> Optional[str]:
+        email = self.md.Meta.get('email', [])
+        if len(email) > 0:
+            return email[0]
+        return None
 
-            match = _ATX_HEADING_RE.match(stripped)
-            if not match:
-                continue
+    def get_github_handle(self) -> Optional[str]:
+        github = self.md.Meta.get('github', [])
+        if len(github) > 0:
+            return github[0]
+        return None
 
-            text = match.group(2).strip()
-            if not text:
-                continue
+    def get_tags(self) -> list[str]:
+        return self.md.Meta.get('tags', [])
 
-            if len(match.group(1)) == 1:
-                return text
-            if first_heading is None:
-                first_heading = text
+    def get_publish_date(self) -> Optional[datetime]:
+        date_list = self.md.Meta.get('date', [])
+        if not date_list:
+            return None
+        raw = re.sub(r'\s+', ' ', date_list[0].strip())
+        try:
+            return datetime.fromisoformat(raw)
+        except ValueError:
+            print(f"Invalid publish date format '{raw}' for file '{self.path.as_posix()}'")
+            return None
 
-        return first_heading
+    def get_cover_image(self) -> Optional[str]:
+        cover_image = self.md.Meta.get('cover', [])
+        if len(cover_image) > 0:
+            return cover_image[0]
+        return None
+
+    def convert_to_html(self) -> str:
+        return self.html
 
     @staticmethod
-    def read_from_file(path):
+    def read_from_file(path: Path):
         with open(path, encoding='utf-8') as file:
-            return MarkDownFile(file.read())
+            return MarkDownFile(path, file.read())

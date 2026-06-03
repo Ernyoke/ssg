@@ -3,38 +3,6 @@
     "destination": "ernyoke.github.io",
     "hostname": "ervinszilagyi.dev",
     "baseHref": "http://127.0.0.1:8080",
-    "meta": {
-        "default": {
-            "og:title": "Ervin Szilágyi - Personal site",
-            "og:image": "images/cover.png",
-            "og:description": "Personal web page and blog.",
-            "og:url": "https://ervinszilagyi.dev",
-            "twitter_handle": "@ervin_szilagyi"
-        },
-        "matchers": [
-            {
-                "file": "src/resume.md",
-                "action": "STATIC",
-                "meta": {
-                    "og:title": "Resume",
-                    "og:description": "Ervin's résumé",
-                    "og:url": "https://ervinszilagyi.dev/resume.html"
-                }
-            },
-            {
-                "file": "src/index.md",
-                "action": "USE_DEFAULT"
-            },
-            {
-                "file": "src/*.md",
-                "action": "TAKE_FROM_CONTENT"
-            },
-            {
-                "file": "src/articles/*",
-                "action": "TAKE_FROM_CONTENT"
-            }
-        ]
-    },
     "frames": [
         {
             "file": "src/index.md",

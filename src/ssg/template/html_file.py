@@ -13,7 +13,7 @@ from ssg.template.template import Template
 
 class HTMLFile:
     @staticmethod
-    def from_article(article: Article, template: Template, base_href: str, hostname: str = None) -> 'HTMLFile':
+    def from_article(article: Article, template: Template, base_href: str, hostname: str|None = None) -> 'HTMLFile':
         soup = BeautifulSoup(article.markdown.convert_to_html(), 'lxml')
         html_file = HTMLFile(template.embed_content(soup))
         html_file.set_page_title(article.title, hostname=hostname)
@@ -73,7 +73,7 @@ class HTMLFile:
                        description: str|None,
                        url: str|None,
                        cover_image: str|None,
-                       twitter_handle: str | None,
+                       twitter_handle: str|None,
                        base_href: str,
                        last_edited_time: Optional[datetime]):
         """
